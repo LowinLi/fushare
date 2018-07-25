@@ -1,4 +1,4 @@
-# fushare
+# fushare(python3)
 https://github.com/LowinLi/fushare
 
 Installation
