@@ -62,6 +62,7 @@ fushare.get_rollYield(date = '20180718', var = 'IF', symbol1 = 'IF1812', symbol2
 
 
 注意：
+
 1.以上展期计算所用的日线行情数据来自tushare库的爬取；
 
 2.主力合约和次主力合约的定义，是由该日的各交割月合约持仓量由大到小排序得到。
@@ -75,8 +76,11 @@ fushare.get_reciept(start = '20180712', end = '20180719', vars = ['CU', 'NI'])
 ![注册仓单](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/cOYxMVta6Ylp87IskIjwOG6nkkMJQ1HJ7HggCSgafog!/b/dDABAAAAAAAA&bo=WARNAgAAAAADBzE!&rf=viewer_4)
 
 注意：
+
 1.vars变量接上需要爬取的品种列表，即使是一个品种，也需要以列表形式输入；
+
 2.在研究仓单的方向变化时，需要考虑一些品种的年度周期性，如农产品的收割季、工业品的开工季等；
+
 3.需考虑到交割日的仓单变化。
 
 
@@ -100,6 +104,7 @@ fushare.get_spotPrice_daily(start = '20180710', end = '20180719', vars = ['CU', 
 
 
 注意：
+
 现货价格是从生意社网站爬取获得，仅支持从2011年至今每个交易日数据。
 
 
@@ -121,6 +126,7 @@ fushare.get_dce_rank_table()、fushare.get_cffex_rank_table()、fushare.get_czce
 ![会员持仓3](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/O905N6vk7SFlQlnPfaFJEZi2qTFUOl.7OKXIGmBeWm8!/b/dFoAAAAAAAAA&bo=pgM8AQAAAAADB7o!&rf=viewer_4)
 
 注意：
+
 因为个交易所公布的持仓排名不同：大连所只公布品种的总持仓排名，没有按不同交割月划分；上海、中金交易所公布了每个交割月的持仓排名，没有公布品种所有合约总排名，因此这里的品种排名和是各合约加总计算得来；郑州交易所公布了各合约排名和品种排名，因此这里都是交易所原始数据。
 
 数据仅供参考，不构成投资建议，投资者请自行研究，风险自担。
