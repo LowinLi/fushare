@@ -127,8 +127,8 @@ def _check_information(df, date):
 
     records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype('float')
 
-    records.loc[:,'nearSymbol'] = records['nearSymbol'].replace('[A-Za-z]*(\d*)', '\g<1>',regex=True)
-    records.loc[:,'domSymbol'] = records['domSymbol'].replace('[A-Za-z]*(\d*)', '\g<1>',regex=True)
+    records.loc[:,'nearSymbol'] = records['nearSymbol'].replace('[^0-9]*(\d*)$', '\g<1>',regex=True)
+    records.loc[:,'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$', '\g<1>',regex=True)
 
     records.loc[:, 'nearSymbol'] = records['var'] + records.loc[:, 'nearSymbol'].astype('int').astype('str')
     records.loc[:, 'domSymbol'] = records['var'] + records.loc[:, 'domSymbol'].astype('int').astype('str')
