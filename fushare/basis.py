@@ -80,7 +80,7 @@ def get_spotPrice(date = None,vars = cons.vars):
                 domBasisRate    主力合约相对现货的基差率       float
                 date            日期                       string YYYYMMDD
     """
-	
+
     date = cons.convert_date(date) if date is not None else datetime.date.today()
     u1 = cons.SYS_SPOTPRICE_LATEST_URL
     u2 = cons.SYS_SPOTPRICE_URL %date.strftime('%Y-%m-%d')
@@ -125,8 +125,10 @@ def _check_information(df, date):
             records = records.append(record)
 
 
-    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype(
-        'float')
+    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype('float')
+
+    records.loc[:,'nearSymbol'] = records['nearSymbol'].replace('[A-Za-z]*(\d*)', '\g<1>',regex=True)
+    records.loc[:,'domSymbol'] = records['domSymbol'].replace('[A-Za-z]*(\d*)', '\g<1>',regex=True)
 
     records.loc[:, 'nearSymbol'] = records['var'] + records.loc[:, 'nearSymbol'].astype('int').astype('str')
     records.loc[:, 'domSymbol'] = records['var'] + records.loc[:, 'domSymbol'].astype('int').astype('str')
