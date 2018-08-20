@@ -132,5 +132,8 @@ fushare.get_dce_rank_table()、fushare.get_cffex_rank_table()、fushare.get_czce
 致谢：
 感谢tushare项目提供借鉴学习的机会；感谢生意社网站的商品基差数据的公开。
 
+交流：
+欢迎加QQ群交流809290570
+
 数据仅供参考，不构成投资建议，投资者请自行研究，风险自担。
 
