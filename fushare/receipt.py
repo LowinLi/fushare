@@ -166,8 +166,9 @@ def get_czce_reciept_1(date = None, vars=cons.vars):
     """
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
     url = cons.CZCE_RECIEPT_URL_1 % date
+    print(url)
     r = requests.get(url)
-    r.encoding = 'gbk'
+    r.encoding = 'utf-8'
     context = r.text
     data = pd.read_html(context)[1]
     records=pd.DataFrame()
@@ -214,7 +215,7 @@ def get_czce_reciept_2(date = None,vars = cons.vars):
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
     url = cons.CZCE_RECIEPT_URL_2 % (date[:4], date)
     r = requests.get(url)
-    r.encoding = 'gbk'
+    r.encoding = 'utf-8'
     data = pd.read_html(r.text)[3:]
     records=pd.DataFrame()
     for dataCut in data:
@@ -249,7 +250,7 @@ def get_czce_reciept_3(date = None, vars = cons.vars):
         Return
         -------
             DataFrame:
-                展期收益率数据(DataFrame):
+                展期收益率数据(DataFrame):`1
                     var             商品品种                     string
                     reciept         仓单数                       int
                     date            日期                         string YYYYMMDD
@@ -257,12 +258,14 @@ def get_czce_reciept_3(date = None, vars = cons.vars):
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
     url = cons.CZCE_RECIEPT_URL_3 % (date[:4], date)
     r = requests.get(url)
-    r.encoding = 'gbk'
+    r.encoding = 'utf-8'
     data = pd.read_html(r.text, encoding='gb2312')
     records=pd.DataFrame()
     if len(data) < 4:
         return records
-    for dataCut in data[1:]:
+    if int(date) <= 20171227:
+        data = data[1:]
+    for dataCut in data:
         if len(dataCut.columns) > 3:
             lastIndexs = [x for x in dataCut.index if '注：' in str(dataCut[0].tolist()[x])]
             if len(lastIndexs) > 0:
