@@ -229,7 +229,7 @@ def get_shfe_rank_table(date = None,vars = cons.vars):
 
 
 
-def _czce_df_read(url,skiprow):
+def _czce_df_read(url,skiprow,encode='utf-8'):
     """
         抓取郑州商品期货交易所的网页数据
         Parameters
@@ -241,7 +241,7 @@ def _czce_df_read(url,skiprow):
             DataFrame
                 
     """
-    r = requests_link(url,'gbk')
+    r = requests_link(url,encode)
     data = pd.read_html(r.text, match='.+', flavor=None, header=0, index_col=0, skiprows=skiprow, attrs=None,
                         parse_dates=False, tupleize_cols=False, thousands=', ', encoding="gbk", decimal='.',
                         converters=None, na_values=None, keep_default_na=True)
@@ -278,7 +278,7 @@ def get_czce_rank_table(date = None,vars = cons.vars):
         url = cons.CZCE_VOLRANK_URL_1 % (date.strftime('%Y%m%d'))
         data = _czce_df_read(url,skiprow=0)
         r = requests.get(url)
-        r.encoding = 'gbk'
+        r.encoding = 'utf-8'
         soup = BeautifulSoup(r.text, 'lxml', from_encoding="gb2312")
         symbols=[]
         for link in soup.find_all('b'):
@@ -306,12 +306,18 @@ def get_czce_rank_table(date = None,vars = cons.vars):
     elif date <= datetime.date(2015, 11, 11):
         url = cons.CZCE_VOLRANK_URL_2 % (date.year, date.strftime('%Y%m%d'))
         data = _czce_df_read(url,skiprow=1)[1]
-    else:
+    elif date < datetime.date(2017, 12, 28):
         url = cons.CZCE_VOLRANK_URL_3 % (date.year, date.strftime('%Y%m%d'))
         data = _czce_df_read(url,skiprow=1)[0]
+    else:
+        url = cons.CZCE_VOLRANK_URL_3 % (date.year, date.strftime('%Y%m%d'))
+        data = _czce_df_read(url, skiprow=0)[0]
 
+    print(url)
     if len(data.columns) <6:
         return {}
+
+    print(data)
     table = data.iloc[:, :9]
     table.columns = rank_columns
     table.loc[:,'rank'] = table.index
@@ -321,6 +327,7 @@ def get_czce_rank_table(date = None,vars = cons.vars):
     indexs = [i for i in table.index if '合约' in i or '品种' in i]
     indexs.insert(0,0)
     D = {}
+
     for i in range(len(indexs)):
         if indexs[i] == 0:
             tableCut = table.loc[:indexs[i + 1], :]
