@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*- 
 
-__version__ = '1.0.0'
+__version__ = '1.1.1'
 __author__ = 'Lowin'
 
 
@@ -32,3 +32,14 @@ from fushare.receipt import (get_reciept)
 大宗商品仓单数据
 """
 from fushare.rollYield import (get_rollYield_bar, get_rollYield)
+
+
+"""
+交易所行情数据日线
+"""
+from fushare.dailyBar import (get_cffex_daily,
+                              get_czce_daily,
+                              get_shfe_vwap,
+                              get_shfe_daily,
+                              get_dce_daily,
+                              get_future_daily)
