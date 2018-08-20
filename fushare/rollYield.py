@@ -14,6 +14,7 @@ import pandas as pd
 import datetime
 from fushare import cons
 from fushare.symbolVar import *
+from fushare.dailyBar import *
 
 def _plot_bar(values,xtick):
     fig = plt.figure(1)
@@ -54,7 +55,7 @@ def get_rollYield_bar(type = 'symbol',  var = 'RB',date= None, start = None, end
     end = cons.convert_date(end) if end is not None else datetime.date.today()
 	
     if type == 'symbol':
-        df = tu.get_future_daily(start=date, end=date, market=symbolMarket(var))
+        df = get_future_daily(start=date, end=date, market=symbolMarket(var))
         df = df[df['variety'] == var]
         if plot:
             _plot_bar(df['close'].tolist(), df['symbol'].tolist())
@@ -63,7 +64,7 @@ def get_rollYield_bar(type = 'symbol',  var = 'RB',date= None, start = None, end
     if type == 'var':
         df = pd.DataFrame()
         for market in ['dce','cffex','shfe','czce']:
-            df = df.append(tu.get_future_daily(start=date, end=date, market=market))
+            df = df.append(get_future_daily(start=date, end=date, market=market))
         varList = list(set(df['variety']))
         ryList = []
         for var in varList:
@@ -98,7 +99,7 @@ def get_rollYield(date = None, var = 'IF',symbol1 = None, symbol2 = None, df = N
             var: string 合约品种如RB、AL等            
             symbol1: string 合约1如rb1810
             symbol2: string 合约2如rb1812
-            df: DataFrame或None 从tushare得到合约价格，如果为空就在函数内部抓tushare，直接喂给数据可以让计算加快
+            df: DataFrame或None 从dailyBar得到合约价格，如果为空就在函数内部抓dailyBar，直接喂给数据可以让计算加快
         Return
         -------
             DataFrame
@@ -111,7 +112,7 @@ def get_rollYield(date = None, var = 'IF',symbol1 = None, symbol2 = None, df = N
         var = symbol2varietie(symbol1)
     if type(df) != type(pd.DataFrame()):
         market = symbolMarket(var)
-        df = tu.get_future_daily(start=date, end=date, market=market)
+        df = get_future_daily(start=date, end=date, market=market)
     if var:
         df = df[df['variety'] == var].sort_values('open_interest',ascending=False)
         df['close']=df['close'].astype('float')
