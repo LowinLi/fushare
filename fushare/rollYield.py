@@ -5,10 +5,10 @@ Created on 2018年07月11日
 @author: lowin
 @contact: li783170560@126.com
 
-获取各合约展期收益率，日线数据从tushare获取
+获取各合约展期收益率，日线数据从dailyBar脚本获取
 """
 
-import tushare as tu
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
