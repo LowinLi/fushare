@@ -1,7 +1,7 @@
 import re
 import datetime
 
-market_var = {'cffex': ['IF','IC','IH','T','TF'],
+market_var = {'cffex': ['IF','IC','IH','T','TF','TS],
 'dce':['C','CS','A','B','M','Y','P','FB','BB','JD','L','V','PP','J','JM','I'],
 'czce':['WH','PM','CF','SR','TA','OI','RI','MA','ME','FG','RS','RM','ZC','JR','LR','SF','SM','WT','TC','GN','RO','ER','SRX','SRY','WSX','WSY','CY','AP'],
 'shfe':['CU','AL','ZN','PB','NI','SN','AU','AG','RB','WR','HC','FU','BU','RU']
