@@ -80,7 +80,7 @@ def get_spotPrice(date = None,vars = cons.vars):
                 domBasisRate    主力合约相对现货的基差率       float
                 date            日期                       string YYYYMMDD
     """
-
+	
     date = cons.convert_date(date) if date is not None else datetime.date.today()
     u1 = cons.SYS_SPOTPRICE_LATEST_URL
     u2 = cons.SYS_SPOTPRICE_URL %date.strftime('%Y-%m-%d')
@@ -111,7 +111,10 @@ def _check_information(df, date):
     df.columns = ['var', 'SP', 'nearSymbol', 'nearPrice', 'domSymbol', 'domPrice']
     records=pd.DataFrame()
     for string in df['var'].tolist():
-        news = ''.join(re.findall(r'[\u4e00-\u9fa5]', string))
+        if string == 'PTA':
+            news = 'PTA'
+        else:
+            news = ''.join(re.findall(r'[\u4e00-\u9fa5]', string))
         if news != '' and news not in ['商品', '价格', '上海期货交易所', '郑州商品交易所', '大连商品交易所']:
             var = chinese_to_english(news)
             record = df[df['var'] == string]
@@ -125,10 +128,11 @@ def _check_information(df, date):
             records = records.append(record)
 
 
-    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype('float')
+    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype(
+        'float')
 
-    records.loc[:,'nearSymbol'] = records['nearSymbol'].replace('[^0-9]*(\d*)$', '\g<1>',regex=True)
-    records.loc[:,'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$', '\g<1>',regex=True)
+    records.loc[:, 'nearSymbol'] = records['nearSymbol'].replace('[^0-9]*(\d*)$', '\g<1>', regex=True)
+    records.loc[:, 'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$', '\g<1>', regex=True)
 
     records.loc[:, 'nearSymbol'] = records['var'] + records.loc[:, 'nearSymbol'].astype('int').astype('str')
     records.loc[:, 'domSymbol'] = records['var'] + records.loc[:, 'domSymbol'].astype('int').astype('str')
@@ -149,5 +153,5 @@ def _check_information(df, date):
 
 
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20180705', end ='20180714',vars = ['RB'])
+    df = get_spotPrice_daily(start ='20180901', end ='20180910',vars = ['TA'])
     print(df)
