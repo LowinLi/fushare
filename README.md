@@ -8,6 +8,10 @@ Installation
 Upgrade
 ---------------
     pip install fushare --upgrade
+    
+Latest Version
+---------------
+    1.1.6
 
 
 **作者：金属成色**
