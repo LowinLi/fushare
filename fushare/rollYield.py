@@ -15,6 +15,7 @@ import datetime
 from fushare import cons
 from fushare.symbolVar import *
 from fushare.dailyBar import *
+calendar = cons.get_calendar()
 
 def _plot_bar(values,xtick):
     fig = plt.figure(1)
@@ -52,7 +53,7 @@ def get_rollYield_bar(type = 'symbol',  var = 'RB',date= None, start = None, end
 
     date = cons.convert_date(date) if date is not None else datetime.date.today()
     start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
 	
     if type == 'symbol':
         df = get_future_daily(start=date, end=date, market=symbolMarket(var))
@@ -108,6 +109,9 @@ def get_rollYield(date = None, var = 'IF',symbol1 = None, symbol2 = None, df = N
                     index   日期或品种
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' % date.strftime('%Y%m%d'))
+        return None
     if symbol1:
         var = symbol2varietie(symbol1)
     if type(df) != type(pd.DataFrame()):
@@ -150,5 +154,5 @@ def _monthChange(symbol1,symbol2):
 
 if __name__ == '__main__':
 
-    d = get_rollYield_bar(type='var',date='20180710')
+    d = get_rollYield_bar(type='date', var = 'RB', start = '20180906')
     print(d)

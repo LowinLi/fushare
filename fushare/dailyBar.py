@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from fushare import cons
 import requests
+calendar = cons.get_calendar()
 
 try:
     from urllib.request import urlopen, Request
@@ -51,6 +52,9 @@ def get_cffex_daily(date=None):
         或 None(给定日期没有交易数据)
     """
     day = cons.convert_date(date) if date is not None else datetime.date.today()
+    if day.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     try:
         html = urlopen(Request(cons.CFFEX_DAILY_URL % (day.strftime('%Y%m'),
                                                      day.strftime('%d'), day.strftime('%Y%m%d')),
@@ -135,6 +139,9 @@ def get_czce_daily(date=None):
         None(类型错误或给定日期没有交易数据)
     """
     day = cons.convert_date(date) if date is not None else datetime.date.today()
+    if day.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     if day > datetime.date(2010, 8, 24):
         if day > datetime.date(2015,9,19):
             u = cons.CZCE_DAILY_URL_3
@@ -247,7 +254,9 @@ def get_shfe_vwap(date=None):
         或 None(给定日期没有数据)
     """
     day = cons.convert_date(date) if date is not None else datetime.date.today()
-
+    if day.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     try:
         json_data = json.loads(urlopen(Request(cons.SHFE_VWAP_URL % (day.strftime('%Y%m%d')),
                                                headers=cons.headers)).read().decode('utf8'))
@@ -292,10 +301,12 @@ def get_shfe_daily(date=None):
         或 None(给定日期没有交易数据)
     """
     day = cons.convert_date(date) if date is not None else datetime.date.today()
-
+    if day.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     try:
         json_data = json.loads(urlopen(Request(cons.SHFE_DAILY_URL % (day.strftime('%Y%m%d')),
-                                               headers=cons.headers)).read().decode('utf8'))
+                                               headers=cons.shfe_headers)).read().decode('utf8'))
     except HTTPError as reason:
         if reason.code != 404:
             print(cons.SHFE_DAILY_URL % (day.strftime('%Y%m%d')), reason)
@@ -365,6 +376,9 @@ def get_dce_daily(date=None, type="future", retries=0):
         或 None(给定日期没有交易数据)
     """
     day = cons.convert_date(date) if date is not None else datetime.date.today()
+    if day.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     if retries > 3:
         print("maximum retires for DCE market data: ", day.strftime("%Y%m%d"))
         return
@@ -489,7 +503,7 @@ def get_future_daily(start=None, end=None, market='CFFEX'):
         return
 
     start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
 
     df_list = list()
     while start <= end:
@@ -501,3 +515,6 @@ def get_future_daily(start=None, end=None, market='CFFEX'):
     if len(df_list) > 0:
         return pd.concat(df_list)
 
+if __name__ == '__main__':
+    d = get_future_daily('20180906')
+    print(d)

@@ -17,6 +17,7 @@ import datetime
 import time
 from fushare import cons
 from fushare.symbolVar import *
+calendar = cons.get_calendar()
 
 def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
     """
@@ -44,7 +45,7 @@ def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
     """
 
     start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
     df_list=[]
     while start <= end:
         print(start)
@@ -82,6 +83,9 @@ def get_spotPrice(date = None,vars = cons.vars):
     """
 	
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     u1 = cons.SYS_SPOTPRICE_LATEST_URL
     u2 = cons.SYS_SPOTPRICE_URL %date.strftime('%Y-%m-%d')
     i = 1
@@ -153,5 +157,5 @@ def _check_information(df, date):
 
 
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20180901', end ='20180910',vars = ['TA'])
+    df = get_spotPrice_daily(start ='20180911', end =None,vars = ['TA'])
     print(df)

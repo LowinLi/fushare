@@ -1,5 +1,7 @@
 import re
 import datetime
+import json
+import os
 
 market_var = {'cffex': ['IF','IC','IH','T','TF','TS'],
 'dce':['C','CS','A','B','M','Y','P','FB','BB','JD','L','V','PP','J','JM','I'],
@@ -24,6 +26,7 @@ headers = {'Host': 'www.czce.com.cn',
            'Accept-Encoding': 'gzip, deflate, sdch',
            'Accept-Language': 'zh-CN,zh;q=0.8,ja;q=0.6'
            }
+shfe_headers = {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'}
 
 SYS_SPOTPRICE_URL = 'http://www.100ppi.com/sf/day-%s.html'
 SYS_SPOTPRICE_LATEST_URL = 'http://www.100ppi.com/sf/'
@@ -102,3 +105,71 @@ def convert_date(date):
                 return datetime.date(year=int(groups[0]), month=int(groups[1]), day=int(groups[2]))
     return None
 
+
+def getJsonPath(name, moduleFile):
+    """
+    获取JSON配置文件的路径从模块所在目录查找： 
+    """
+    moduleFolder = os.path.abspath(os.path.dirname(moduleFile))
+    moduleJsonPath = os.path.join(moduleFolder, '.', name)
+    return moduleJsonPath
+
+def get_calendar():
+    """
+    获取交易日历至2018年结束
+    :return :  list
+    """
+    settingFileName = 'calendar.json'
+    settingfilePath = getJsonPath(settingFileName, __file__)
+    return json.load(open(settingfilePath,"r"))
+
+def lastTradingDay(d):
+
+    """
+    获取前一个交易日
+    :param d:           '%Y%m%d' or  datetime.date()
+    :return lastday:    '%Y%m%d' or  datetime.date()
+    """
+    calendar = get_calendar()
+
+    if isinstance(d,(str)):
+        if d not in calendar:
+            print('Today is not tradingday：' + d)
+            return False
+        Pos = calendar.index(d)
+        lastday = calendar[Pos - 1]
+        return lastday
+
+    elif isinstance(d,(datetime.date)):
+        d_str = d.strftime('%Y%m%d')
+        if d_str not in calendar:
+            print('Today is not workingday：' + d_str)
+            return False
+        Pos = calendar.index(d_str)
+        lastday = calendar[Pos - 1]
+        lastday = datetime.datetime.strptime(lastday,'%Y%m%d').date()
+        return lastday
+
+def get_latestDataDate(d):
+    """
+    获取最新的有数据的日期
+    :param d:           datetime.datetime()
+    :return string
+    """
+
+    calendar = get_calendar()
+    if d.strftime('%Y%m%d') in calendar:
+        if d.time() > datetime.time(17, 0, 0):
+            return d.strftime('%Y%m%d')
+        else:
+            return lastTradingDay(d.strftime('%Y%m%d'))
+    else:
+        while d.strftime('%Y%m%d') not in calendar:
+            d = d - datetime.timedelta(days = 1)
+        return d.strftime('%Y%m%d')
+
+
+
+if __name__ == '__main__':
+    d = datetime.datetime(2018,10,5,17,1,0)
+    print(get_latestDataDate(d))
