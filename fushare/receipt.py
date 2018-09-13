@@ -86,6 +86,8 @@ def get_shfe_reciept_1(date = None,vars = cons.vars):
     elif date == '20101029':
         shfe_20101029['date'] = date
         return shfe_20101029
+    elif date in ['20100416','20130821']:
+        return None
     else:
         varList = ['天然橡胶', '沥青仓库', '沥青厂库', '热轧卷板', '燃料油', '白银', '线材', '螺纹钢', '铅', '铜', '铝', '锌', '黄金', '锡', '镍']
         url = cons.SHFE_RECIEPT_URL_1 % date
