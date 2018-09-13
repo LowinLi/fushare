@@ -92,10 +92,12 @@ def get_spotPrice(date = None,vars = cons.vars):
     while True:
         for url in [u2,u1]:
             try:
+
                 r=requests.get(url,timeout=2)
                 string = pd.read_html(r.text)[0].loc[1,1]
                 news = ''.join(re.findall(r'[0-9]',string))
                 if news[3:11] == date.strftime('%Y%m%d'):
+
                     records = _check_information(pd.read_html(r.text)[1],date)
                     records.index = records['var']
                     vars_inMarket = [i for i in vars if i in records.index]
@@ -111,15 +113,18 @@ def get_spotPrice(date = None,vars = cons.vars):
 
 
 def _check_information(df, date):
+
     df = df.loc[:, [0, 1, 2, 3, 7, 8]]
     df.columns = ['var', 'SP', 'nearSymbol', 'nearPrice', 'domSymbol', 'domPrice']
     records=pd.DataFrame()
     for string in df['var'].tolist():
+
         if string == 'PTA':
             news = 'PTA'
         else:
             news = ''.join(re.findall(r'[\u4e00-\u9fa5]', string))
         if news != '' and news not in ['商品', '价格', '上海期货交易所', '郑州商品交易所', '大连商品交易所']:
+
             var = chinese_to_english(news)
             record = df[df['var'] == string]
             record.loc[:,'var'] = var
@@ -157,5 +162,5 @@ def _check_information(df, date):
 
 
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20180911', end =None,vars = ['TA'])
+    df = get_spotPrice_daily(start ='20120104', end ='20120104')
     print(df)

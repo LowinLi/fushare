@@ -103,7 +103,7 @@ def get_shfe_reciept_1(date = None,vars = cons.vars):
                 dataCut = dataCut.fillna(method='pad')
             D={}
             D['var'] = chinese_to_english(dataCut[0].tolist()[0])
-            D['reciept'] = dataCut[1].tolist()[-1]
+            D['reciept'] = int(dataCut[1].tolist()[-1])
             D['date'] = date
             records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
@@ -148,7 +148,7 @@ def get_shfe_reciept_2(date = None,vars=None):
     records = pd.DataFrame()
     for var in set(data['VARNAME'].tolist()):
         dataCut = data[data['VARNAME'] == var]
-        D = {'var':chinese_to_english(re.sub("\W|[a-zA-Z]", "", var)),'reciept':dataCut['WRTWGHTS'].tolist()[-1],'date':date}
+        D = {'var':chinese_to_english(re.sub("\W|[a-zA-Z]", "", var)),'reciept':int(dataCut['WRTWGHTS'].tolist()[-1]),'date':date}
         records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -178,7 +178,6 @@ def get_czce_reciept_1(date = None, vars=cons.vars):
         print('%s非交易日' %date)
         return None
     url = cons.CZCE_RECIEPT_URL_1 % date
-    print(url)
     r = requests_link(url,encoding='utf-8')
     r.encoding = 'utf-8'
     context = r.text
@@ -200,7 +199,7 @@ def get_czce_reciept_1(date = None, vars=cons.vars):
             reciept = dataCut[6].tolist()[-1]
         else:
             reciept =dataCut[5].tolist()[-1]
-        D = {'var':var, 'reciept':reciept, 'date':date}
+        D = {'var':var, 'reciept':int(reciept), 'date':date}
         records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -245,8 +244,9 @@ def get_czce_reciept_2(date = None,vars = cons.vars):
                 strings = dataCut[0].tolist()[0]
                 string = strings.split(' ')[0][3:]
                 var = chinese_to_english(re.sub('[A-Z]+', '', string))
-            reciept = dataCut.iloc[:,-3].tolist()[-1]
-            D = {'var':var, 'reciept':reciept, 'date':date}
+            dataCut.columns = dataCut.T[1].tolist()
+            reciept = dataCut['仓单数量'].tolist()[-1]
+            D = {'var':var, 'reciept':int(reciept), 'date':date}
             records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -302,7 +302,7 @@ def get_czce_reciept_3(date = None, vars = cons.vars):
                 reciept = dataCut.loc[:, '仓单数量'].tolist()[-1]
             except:
                 reciept = dataCut.loc[:, '仓单数量(保税)'].tolist()[-1]
-            D = {'var': var, 'reciept': reciept, 'date': date}
+            D = {'var': var, 'reciept': int(reciept), 'date': date}
             records = records.append(pd.DataFrame(D, index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -362,5 +362,5 @@ def get_reciept(start=None, end=None, vars=cons.vars):
     return records.reset_index(drop=True)
 
 if __name__ == '__main__':
-    df = get_reciept(start='20180905', end=None)
-    print(df)
+    d = get_czce_reciept_2(date='20141218')
+    print(d)
