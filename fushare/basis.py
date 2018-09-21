@@ -8,18 +8,19 @@ Created on 2018年07月12日
 网站数据含有20110104至今
 '''
 
-
-
-import requests
-import re
-import pandas as pd
 import datetime
 import time
-from fushare import cons
+
+import pandas as pd
+import requests
+from requests.exceptions import ReadTimeout
+
 from fushare.symbolVar import *
+
 calendar = cons.get_calendar()
 
-def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
+
+def get_spotPrice_daily(start=None, end=None, vars=cons.vars):
     """
         获取大宗商品现货价格，及相应基差
     Parameters
@@ -44,21 +45,22 @@ def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
                 date            日期                        string YYYYMMDD
     """
 
-    start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
-    df_list=[]
+    start = cons.convert_date(
+        start) if start is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(
+        cons.get_latestDataDate(datetime.datetime.now()))
+    df_list = []
     while start <= end:
-        print(start)
-        df = get_spotPrice(start,vars)
+        df = get_spotPrice(start, vars)
         if df is not None:
             df_list.append(df)
-        start += datetime.timedelta(days = 1)
+        start += datetime.timedelta(days=1)
 
     if len(df_list) > 0:
         return pd.concat(df_list).reset_index(drop=True)
 
 
-def get_spotPrice(date = None,vars = cons.vars):
+def get_spotPrice(date=None, vars=cons.vars):
     """
         获取某一天大宗商品现货价格，及相应基差
     Parameters
@@ -81,86 +83,112 @@ def get_spotPrice(date = None,vars = cons.vars):
                 domBasisRate    主力合约相对现货的基差率       float
                 date            日期                       string YYYYMMDD
     """
-	
-    date = cons.convert_date(date) if date is not None else datetime.date.today()
+
+    date = cons.convert_date(
+        date) if date is not None else datetime.date.today()
     if date.strftime('%Y%m%d') not in calendar:
-        print('%s非交易日' %date.strftime('%Y%m%d'))
+        print('%s非交易日' % date.strftime('%Y%m%d'))
         return None
     u1 = cons.SYS_SPOTPRICE_LATEST_URL
-    u2 = cons.SYS_SPOTPRICE_URL %date.strftime('%Y-%m-%d')
-    i = 1
-    while True:
-        for url in [u2,u1]:
+    u2 = cons.SYS_SPOTPRICE_URL % date.strftime('%Y-%m-%d')
+
+    def try_one(url, max_trials=5):
+        i = 1
+        while True:
             try:
-
-                r=requests.get(url,timeout=2)
-                string = pd.read_html(r.text)[0].loc[1,1]
-                news = ''.join(re.findall(r'[0-9]',string))
+                print("{} : 第 {} / {} 次尝试...".format(date, i, max_trials))
+                r = requests.get(url, timeout=2)
+                string = pd.read_html(r.text)[0].loc[1, 1]
+                news = ''.join(re.findall(r'[0-9]', string))
+                # confirm the date
                 if news[3:11] == date.strftime('%Y%m%d'):
-
-                    records = _check_information(pd.read_html(r.text)[1],date)
+                    records = _check_information(pd.read_html(r.text)[1], date)
                     records.index = records['var']
                     vars_inMarket = [i for i in vars if i in records.index]
-                    return records.loc[vars_inMarket,:].reset_index(drop=True)
+                    return records.loc[vars_inMarket, :].reset_index(drop=True)
                 else:
                     time.sleep(3)
                     return pd.DataFrame()
-            except Exception as e:
-                print('%s日生意社数据连接失败，第%s次尝试，最多5次' % (date.strftime('%Y-%m-%d'), str(i)))
-                i+=1
-                if i > 5:
+            except ReadTimeout:
+                i += 1
+                if i > max_trials:
                     return pd.DataFrame()
+
+    # get historical spot prices
+    data = try_one(u2)
+    if len(data) <= 0:
+        # get latest spot prices
+        data = try_one(u1)
+
+    if len(data)>0:
+        print('{} : 成功'.format(date))
+    else:
+        print('{} : 生意社无数据'.format(date))
+    return data
 
 
 def _check_information(df, date):
-
     df = df.loc[:, [0, 1, 2, 3, 7, 8]]
-    df.columns = ['var', 'SP', 'nearSymbol', 'nearPrice', 'domSymbol', 'domPrice']
-    records=pd.DataFrame()
+    df.columns = ['var', 'SP', 'nearSymbol', 'nearPrice', 'domSymbol',
+                  'domPrice']
+    records = pd.DataFrame()
     for string in df['var'].tolist():
 
         if string == 'PTA':
             news = 'PTA'
         else:
             news = ''.join(re.findall(r'[\u4e00-\u9fa5]', string))
-        if news != '' and news not in ['商品', '价格', '上海期货交易所', '郑州商品交易所', '大连商品交易所']:
+        if news != '' and news not in ['商品', '价格', '上海期货交易所', '郑州商品交易所',
+                                       '大连商品交易所']:
 
             var = chinese_to_english(news)
             record = df[df['var'] == string]
-            record.loc[:,'var'] = var
-            record.loc[:,'SP'] = record.loc[:,'SP'].astype(float)
+            record.loc[:, 'var'] = var
+            record.loc[:, 'SP'] = record.loc[:, 'SP'].astype(float)
             if var == 'JD':
-                record.loc[:,'SP'] = float(record['SP']) * 500
+                record.loc[:, 'SP'] = float(record['SP']) * 500
             if var == 'FG':
-                record.loc[:,'SP'] = record['SP'] * 80
+                record.loc[:, 'SP'] = record['SP'] * 80
 
             records = records.append(record)
 
-
-    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype(
+    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:,
+                                                      ['nearPrice', 'domPrice',
+                                                       'SP']].astype(
         'float')
 
-    records.loc[:, 'nearSymbol'] = records['nearSymbol'].replace('[^0-9]*(\d*)$', '\g<1>', regex=True)
-    records.loc[:, 'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$', '\g<1>', regex=True)
+    records.loc[:, 'nearSymbol'] = records['nearSymbol'].replace(
+        '[^0-9]*(\d*)$', '\g<1>', regex=True)
+    records.loc[:, 'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$',
+                                                               '\g<1>',
+                                                               regex=True)
 
-    records.loc[:, 'nearSymbol'] = records['var'] + records.loc[:, 'nearSymbol'].astype('int').astype('str')
-    records.loc[:, 'domSymbol'] = records['var'] + records.loc[:, 'domSymbol'].astype('int').astype('str')
+    records.loc[:, 'nearSymbol'] = records['var'] + records.loc[:,
+                                                    'nearSymbol'].astype(
+        'int').astype('str')
+    records.loc[:, 'domSymbol'] = records['var'] + records.loc[:,
+                                                   'domSymbol'].astype(
+        'int').astype('str')
 
-    records['nearSymbol'] = records['nearSymbol'].apply(lambda x: x.lower() if x[:-4] in cons.market_var['shfe']+cons.market_var['dce'] else x)
-    records.loc[:,'domSymbol'] = records.loc[:,'domSymbol'].apply(lambda x: x.lower() if x[:-4] in cons.market_var['shfe']+cons.market_var['dce'] else x)
-    records.loc[:,'nearSymbol'] = records.loc[:,'nearSymbol'].apply(lambda x: x[:-4]+x[-3:] if x[:-4] in cons.market_var['czce'] else x)
-    records.loc[:,'domSymbol'] = records.loc[:,'domSymbol'].apply(lambda x: x[:-4]+x[-3:] if x[:-4] in cons.market_var['czce'] else x)
+    records['nearSymbol'] = records['nearSymbol'].apply(
+        lambda x: x.lower() if x[:-4] in cons.market_var['shfe'] +
+                               cons.market_var['dce'] else x)
+    records.loc[:, 'domSymbol'] = records.loc[:, 'domSymbol'].apply(
+        lambda x: x.lower() if x[:-4] in cons.market_var['shfe'] +
+                               cons.market_var['dce'] else x)
+    records.loc[:, 'nearSymbol'] = records.loc[:, 'nearSymbol'].apply(
+        lambda x: x[:-4] + x[-3:] if x[:-4] in cons.market_var['czce'] else x)
+    records.loc[:, 'domSymbol'] = records.loc[:, 'domSymbol'].apply(
+        lambda x: x[:-4] + x[-3:] if x[:-4] in cons.market_var['czce'] else x)
 
     records['nearBasis'] = records['nearPrice'] - records['SP']
     records['domBasis'] = records['domPrice'] - records['SP']
-    records['nearBasisRate'] = records['nearPrice']/records['SP']-1
-    records['domBasisRate'] = records['domPrice']/records['SP']-1
+    records['nearBasisRate'] = records['nearPrice'] / records['SP'] - 1
+    records['domBasisRate'] = records['domPrice'] / records['SP'] - 1
     records.loc[:, 'date'] = date.strftime('%Y%m%d')
     return records
 
 
-
-
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20120104', end ='20120104')
+    df = get_spotPrice_daily(start='20120104', end='20120104')
     print(df)
