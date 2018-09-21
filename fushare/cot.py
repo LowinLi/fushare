@@ -11,16 +11,12 @@ Created on 2018年07月18日
 """
 
 
-import requests
 import json
 from bs4 import BeautifulSoup
-import urllib
 from io import StringIO
-import pandas as pd
 import datetime
-from fushare import cons
+from fushare.requests_fun import *
 from fushare.symbolVar import *
-from fushare.requests_fun import requests_link
 calendar = cons.get_calendar()
 
 rank_columns = ['vol_party_name', 'vol', 'vol_chg','long_party_name', 'long_openIntr',
@@ -62,7 +58,11 @@ def get_rank_sum_daily(start=None, end=None, vars=cons.vars):
     while start <= end:
         print(start)
         if start.strftime('%Y%m%d') in calendar:
-            records = records.append(get_rank_sum(start, vars))
+            data = get_rank_sum(start, vars)
+            if data is False:
+                print('%s日交易所数据连接失败，已超过20次，您的地址被网站墙了，请保存好返回数据，稍后从该日期起重试' % start.strftime('%Y-%m-%d'))
+                return records.reset_index(drop=True)
+            records = records.append(data)
         else:
             print('%s非交易日' % start.strftime('%Y%m%d'))
         start += datetime.timedelta(days=1)
@@ -108,13 +108,25 @@ def get_rank_sum(date = None,vars=cons.vars):
     cffex_var = [i for i in vars if i in cons.market_var['cffex']]
     D={}
     if len(dce_var)>0:
-        D.update(get_dce_rank_table(date, dce_var))
+        data = get_dce_rank_table(date, dce_var)
+        if data is False:
+            return False
+        D.update(data)
     if len(shfe_var)>0:
-        D.update(get_shfe_rank_table(date, shfe_var))
+        data = get_shfe_rank_table(date, shfe_var)
+        if data is False:
+            return False
+        D.update(data)
     if len(czce_var)>0:
-        D.update(get_czce_rank_table(date, czce_var))
+        data = get_czce_rank_table(date, czce_var)
+        if data is False:
+            return False
+        D.update(data)
     if len(cffex_var)>0:
-        D.update(get_cffex_rank_table(date, cffex_var))
+        data = get_cffex_rank_table(date, cffex_var)
+        if data is False:
+            return False
+        D.update(data)
     records=pd.DataFrame()
 
 
@@ -123,41 +135,43 @@ def get_rank_sum(date = None,vars=cons.vars):
         for symbol in set(table['symbol']):
 
             var = symbol2varietie(symbol)
-            tableCut = table[table['symbol'] == symbol]
-            tableCut_top5 = tableCut[tableCut['rank'] <= 5]
-            tableCut_top10 = tableCut[tableCut['rank'] <= 10]
-            tableCut_top15 = tableCut[tableCut['rank'] <= 15]
-            tableCut_top20 = tableCut[tableCut['rank'] <= 20]
+            if var in vars:
+                tableCut = table[table['symbol'] == symbol]
+                tableCut['rank'] = tableCut['rank'].astype('float')
+                tableCut_top5 = tableCut[tableCut['rank'] <= 5]
+                tableCut_top10 = tableCut[tableCut['rank'] <= 10]
+                tableCut_top15 = tableCut[tableCut['rank'] <= 15]
+                tableCut_top20 = tableCut[tableCut['rank'] <= 20]
 
-            D = {'symbol': symbol, 'var': var,
+                D = {'symbol': symbol, 'var': var,
 
-                 'vol_top5': tableCut_top5['vol'].sum(), 'vol_chg_top5': tableCut_top5['vol_chg'].sum(),
-                 'long_openIntr_top5': tableCut_top5['long_openIntr'].sum(),
-                 'long_openIntr_chg_top5': tableCut_top5['long_openIntr_chg'].sum(),
-                 'short_openIntr_top5': tableCut_top5['short_openIntr'].sum(),
-                 'short_openIntr_chg_top5': tableCut_top5['short_openIntr_chg'].sum(),
+                     'vol_top5': tableCut_top5['vol'].sum(), 'vol_chg_top5': tableCut_top5['vol_chg'].sum(),
+                     'long_openIntr_top5': tableCut_top5['long_openIntr'].sum(),
+                     'long_openIntr_chg_top5': tableCut_top5['long_openIntr_chg'].sum(),
+                     'short_openIntr_top5': tableCut_top5['short_openIntr'].sum(),
+                     'short_openIntr_chg_top5': tableCut_top5['short_openIntr_chg'].sum(),
 
-                 'vol_top10': tableCut_top10['vol'].sum(), 'vol_chg_top10': tableCut_top10['vol_chg'].sum(),
-                 'long_openIntr_top10': tableCut_top10['long_openIntr'].sum(),
-                 'long_openIntr_chg_top10': tableCut_top10['long_openIntr_chg'].sum(),
-                 'short_openIntr_top10': tableCut_top10['short_openIntr'].sum(),
-                 'short_openIntr_chg_top10': tableCut_top10['short_openIntr_chg'].sum(),
+                     'vol_top10': tableCut_top10['vol'].sum(), 'vol_chg_top10': tableCut_top10['vol_chg'].sum(),
+                     'long_openIntr_top10': tableCut_top10['long_openIntr'].sum(),
+                     'long_openIntr_chg_top10': tableCut_top10['long_openIntr_chg'].sum(),
+                     'short_openIntr_top10': tableCut_top10['short_openIntr'].sum(),
+                     'short_openIntr_chg_top10': tableCut_top10['short_openIntr_chg'].sum(),
 
-                 'vol_top15': tableCut_top15['vol'].sum(), 'vol_chg_top15': tableCut_top15['vol_chg'].sum(),
-                 'long_openIntr_top15': tableCut_top15['long_openIntr'].sum(),
-                 'long_openIntr_chg_top15': tableCut_top15['long_openIntr_chg'].sum(),
-                 'short_openIntr_top15': tableCut_top15['short_openIntr'].sum(),
-                 'short_openIntr_chg_top15': tableCut_top15['short_openIntr_chg'].sum(),
+                     'vol_top15': tableCut_top15['vol'].sum(), 'vol_chg_top15': tableCut_top15['vol_chg'].sum(),
+                     'long_openIntr_top15': tableCut_top15['long_openIntr'].sum(),
+                     'long_openIntr_chg_top15': tableCut_top15['long_openIntr_chg'].sum(),
+                     'short_openIntr_top15': tableCut_top15['short_openIntr'].sum(),
+                     'short_openIntr_chg_top15': tableCut_top15['short_openIntr_chg'].sum(),
 
-                 'vol_top20': tableCut_top20['vol'].sum(), 'vol_chg_top20': tableCut_top20['vol_chg'].sum(),
-                 'long_openIntr_top20': tableCut_top20['long_openIntr'].sum(),
-                 'long_openIntr_chg_top20': tableCut_top20['long_openIntr_chg'].sum(),
-                 'short_openIntr_top20': tableCut_top20['short_openIntr'].sum(),
-                 'short_openIntr_chg_top20': tableCut_top20['short_openIntr_chg'].sum(),
+                     'vol_top20': tableCut_top20['vol'].sum(), 'vol_chg_top20': tableCut_top20['vol_chg'].sum(),
+                     'long_openIntr_top20': tableCut_top20['long_openIntr'].sum(),
+                     'long_openIntr_chg_top20': tableCut_top20['long_openIntr_chg'].sum(),
+                     'short_openIntr_top20': tableCut_top20['short_openIntr'].sum(),
+                     'short_openIntr_chg_top20': tableCut_top20['short_openIntr_chg'].sum(),
 
-                 'date': date.strftime('%Y%m%d')
-                 }
-            records = records.append(pd.DataFrame(D, index=[0]))
+                     'date': date.strftime('%Y%m%d')
+                     }
+                records = records.append(pd.DataFrame(D, index=[0]))
 
     if len(D.items())>0:
         add_vars = [i for i in cons.market_var['shfe']+cons.market_var['cffex'] if i in records['var'].tolist()]
@@ -197,6 +211,9 @@ def get_shfe_rank_table(date = None,vars = cons.vars):
                 date                        日期                        string YYYYMMDD
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date < datetime.date(2002,1,7):
+        print("shfe数据源开始日期为20020107，跳过")
+        return {}
     if date.strftime('%Y%m%d') not in calendar:
         print('%s非交易日' % date.strftime('%Y%m%d'))
         return {}
@@ -283,6 +300,9 @@ def get_czce_rank_table(date = None,vars = cons.vars):
                 date                        日期                        string YYYYMMDD
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date < datetime.date(2005,5,9):
+        print("czce数据源开始日期为20050509，跳过")
+        return {}
     if date.strftime('%Y%m%d') not in calendar:
         print('%s非交易日' % date.strftime('%Y%m%d'))
         return {}
@@ -304,7 +324,7 @@ def get_czce_rank_table(date = None,vars = cons.vars):
         D={}
         for i in range(len(symbols)):
             symbol = symbols[i]
-            tableCut = data[i+1]
+            tableCut = data[i+2]
             tableCut.columns = rank_columns
             tableCut = tableCut.iloc[:-1,:]
             tableCut.loc[:,'rank'] = tableCut.index
@@ -312,6 +332,13 @@ def get_czce_rank_table(date = None,vars = cons.vars):
             tableCut.loc['合计',['vol_party_name','long_party_name','short_party_name']] = None
             tableCut.loc[:,'symbol'] = symbol
             tableCut.loc[:,'var'] = symbol2varietie(symbol)
+            tableCut[intColumns] = tableCut[intColumns].fillna(0)
+            tableCut[intColumns] = tableCut[intColumns].astype(str)
+            tableCut[intColumns] = tableCut[intColumns].applymap(lambda x: x.replace(',', ''))
+            tableCut = tableCut.applymap(lambda x: 0 if x == '-' else x)
+
+            tableCut[intColumns] = tableCut[intColumns].astype(float)
+            tableCut[intColumns] = tableCut[intColumns].astype(int)
             D[symbol] = tableCut.reset_index(drop=True)
         return D
 
@@ -392,7 +419,9 @@ def get_dce_rank_table(date = None,vars = cons.vars):
                 var                         品种                        string
                 date                        日期                        string YYYYMMDD
     """
-	
+    if date < datetime.date(2006, 1, 4):
+        print(Exception("dce数据源开始日期为20060104，跳过"))
+        return {}
     date = cons.convert_date(date) if date is not None else datetime.date.today()
     if date.strftime('%Y%m%d') not in calendar:
         print('%s非交易日' % date.strftime('%Y%m%d'))
@@ -406,7 +435,10 @@ def get_dce_rank_table(date = None,vars = cons.vars):
         list_60 = []
         list_60_chg = []
         rank = []
-        texts = urllib.request.urlopen(url).readlines()
+
+        texts = urllib_request_link(url)
+        if texts == None:
+            return False
         if len(texts)>30:
             for text in texts:
                 line = text.decode('utf8')
@@ -463,6 +495,9 @@ def get_cffex_rank_table(date = None,vars = cons.vars):
     """
     vars = [i for i in vars if i in cons.market_var['cffex']]
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date < datetime.date(2010,4,16):
+        print(Exception("cffex数据源开始日期为20100416，跳过"))
+        return {}
     if date.strftime('%Y%m%d') not in calendar:
         print('%s非交易日' % date.strftime('%Y%m%d'))
         return {}
@@ -470,6 +505,8 @@ def get_cffex_rank_table(date = None,vars = cons.vars):
     for var in vars:
         url = cons.CFFEX_VOLRANK_URL % (date.strftime('%Y%m'), date.strftime('%d'), var)
         r = requests_link(url,encoding='gbk')
+        if r == None:
+            return False
         if '网页错误' not in r.text:
             table = pd.read_csv(StringIO(r.text.split('\n交易日,')[1]))
             table = table.dropna(how='any')
@@ -495,5 +532,5 @@ def _tableCut_cal(tableCut, symbol):
 
 
 if __name__ == '__main__':
-    df = get_rank_sum_daily(start='20180905')
+    df = get_rank_sum_daily('20080221')
     print(df)

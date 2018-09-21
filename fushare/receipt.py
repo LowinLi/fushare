@@ -87,6 +87,7 @@ def get_shfe_reciept_1(date = None,vars = cons.vars):
         shfe_20101029['date'] = date
         return shfe_20101029
     elif date in ['20100416','20130821']:
+        print(u'20100416、20130821日期交易所数据丢失')
         return None
     else:
         varList = ['天然橡胶', '沥青仓库', '沥青厂库', '热轧卷板', '燃料油', '白银', '线材', '螺纹钢', '铅', '铜', '铝', '锌', '黄金', '锡', '镍']
@@ -179,6 +180,8 @@ def get_czce_reciept_1(date = None, vars=cons.vars):
     if date not in calendar:
         print('%s非交易日' %date)
         return None
+    if date == '20090820':
+        return pd.DataFrame()
     url = cons.CZCE_RECIEPT_URL_1 % date
     r = requests_link(url,encoding='utf-8')
     r.encoding = 'utf-8'
@@ -340,29 +343,41 @@ def get_reciept(start=None, end=None, vars=cons.vars):
             for market,marketVars in cons.market_var.items():
 
                 if market == 'dce':
-                    f = get_dce_reciept
+                    if start >= datetime.date(2009,4,7):
+                        f = get_dce_reciept
+                    else:
+                        print(u'20090407起，dce每交易日更新仓单数据')
+                        f = None
                 elif market == 'shfe':
-                    if start <= datetime.date(2014,5,16):
+                    if start <= datetime.date(2014,5,16) and start >= datetime.date(2008,10,6):
                         f = get_shfe_reciept_1
-                    else:
+                    elif start > datetime.date(2014,5,16):
                         f = get_shfe_reciept_2
-                elif market == 'czce':
-                    if start <= datetime.date(2010,8,24):
-                        f = get_czce_reciept_1
-                    elif start <= datetime.date(2015,11,11):
-                        f = get_czce_reciept_2
                     else:
+                        f=None
+                        print(u'20081006起，shfe每交易日更新仓单数据')
+
+                elif market == 'czce':
+                    if start <= datetime.date(2010,8,24) and start >= datetime.date(2008,3,3):
+                        f = get_czce_reciept_1
+                    elif start <= datetime.date(2015,11,11) and start > datetime.date(2010,8,24):
+                        f = get_czce_reciept_2
+                    elif start > datetime.date(2015,11,11):
                         f = get_czce_reciept_3
+                    else:
+                        f=None
+                        print(u'20080303起，czce每交易日更新仓单数据')
 
 
                 get_vars = [var for var in vars if var in marketVars]
 
                 if market != 'cffex' and get_vars != []:
-                    records = records.append(f(start,get_vars))
+                    if f is not None:
+                        records = records.append(f(start,get_vars))
 
         start += datetime.timedelta(days=1)
     return records.reset_index(drop=True)
 
 if __name__ == '__main__':
-    d = get_czce_reciept_2(date='20141218')
-    print(d)
+    d = get_reciept(start='20180712', end='20180719', vars = ['SR'])
+    d.to_csv('E://reciept.csv')

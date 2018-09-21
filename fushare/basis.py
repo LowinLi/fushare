@@ -50,7 +50,9 @@ def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
     while start <= end:
         print(start)
         df = get_spotPrice(start,vars)
-        if df is not None:
+        if df is False:
+            return pd.concat(df_list).reset_index(drop=True)
+        elif df is not None:
             df_list.append(df)
         start += datetime.timedelta(days = 1)
 
@@ -81,8 +83,9 @@ def get_spotPrice(date = None,vars = cons.vars):
                 domBasisRate    主力合约相对现货的基差率       float
                 date            日期                       string YYYYMMDD
     """
-	
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date < datetime.date(2011,1,4):
+        raise Exception("数据源开始日期为20110104，请修改获取数据时段检查")
     if date.strftime('%Y%m%d') not in calendar:
         print('%s非交易日' %date.strftime('%Y%m%d'))
         return None
@@ -92,7 +95,6 @@ def get_spotPrice(date = None,vars = cons.vars):
     while True:
         for url in [u2,u1]:
             try:
-
                 r=requests.get(url,timeout=2)
                 string = pd.read_html(r.text)[0].loc[1,1]
                 news = ''.join(re.findall(r'[0-9]',string))
@@ -104,12 +106,12 @@ def get_spotPrice(date = None,vars = cons.vars):
                     return records.loc[vars_inMarket,:].reset_index(drop=True)
                 else:
                     time.sleep(3)
-                    return pd.DataFrame()
             except Exception as e:
                 print('%s日生意社数据连接失败，第%s次尝试，最多5次' % (date.strftime('%Y-%m-%d'), str(i)))
                 i+=1
                 if i > 5:
-                    return pd.DataFrame()
+                    print('%s日生意社数据连接失败，已超过5次，您的地址被网站墙了，请保存好返回数据，稍后从该日期起重试' % date.strftime('%Y-%m-%d'))
+                    return False
 
 
 def _check_information(df, date):
@@ -162,5 +164,5 @@ def _check_information(df, date):
 
 
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20120104', end ='20120104')
-    print(df)
+    df = get_spotPrice_daily(start ='20130327', end ='20180918')
+    df.to_csv('E://spot2.csv')
