@@ -1,6 +1,18 @@
 # -*- coding:utf-8 -*- 
 
-__version__ = '1.0.0'
+"""
+版本改动记录:
+1.1.7：
+郑商所的仓单数据有些输出的格式是文本，改成int型；
+郑商所有一些时间段得到的仓单是仓单变化量，修正此bug  
+1.1.8:
+上期所网站丢失了两个交易日20100416、20130821的数据，在调取此数据时返回None
+"""
+
+
+
+
+__version__ = '1.1.8'
 __author__ = 'Lowin'
 
 
@@ -32,3 +44,14 @@ from fushare.receipt import (get_reciept)
 大宗商品仓单数据
 """
 from fushare.rollYield import (get_rollYield_bar, get_rollYield)
+
+
+"""
+交易所行情数据日线
+"""
+from fushare.dailyBar import (get_cffex_daily,
+                              get_czce_daily,
+                              get_shfe_vwap,
+                              get_shfe_daily,
+                              get_dce_daily,
+                              get_future_daily)

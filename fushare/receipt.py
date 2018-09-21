@@ -17,7 +17,8 @@ import pandas as pd
 import datetime
 from fushare import cons
 from fushare.symbolVar import *
-
+calendar = cons.get_calendar()
+from fushare.requests_fun import *
 shfe_20100126 = pd.DataFrame({'var':['CU','AL','ZN','RU','FU','AU','RB','WR'],'reciept':[29783,285396,187713,116435,376200,12,145648,0]})
 shfe_20101029 = pd.DataFrame({'var':['CU','AL','ZN','RU','FU','AU','RB','WR'],'reciept':[39214,359729,182562,25990,313600,27,36789,0]})
 # ----------------------------------------------------------------------
@@ -38,8 +39,11 @@ def get_dce_reciept(date = None,vars=cons.vars):
                     date            日期                         string YYYYMMDD
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     url = cons.DCE_RECIEPT_URL % (date.year, date.month - 1, date.day)
-    data = pd.read_html(url, encoding='utf-8')[0]
+    data = pandas_readHtml_link(url, encoding='utf-8')[0]
     records=pd.DataFrame()
     for x in data.to_dict(orient='records'):
         if type(x[0]) == type('a'):
@@ -73,19 +77,23 @@ def get_shfe_reciept_1(date = None,vars = cons.vars):
                     date            日期                         string YYYYMMDD
     """
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
+    if date not in calendar:
+        print('%s非交易日' %date)
+        return None
     if date == '20100126':
         shfe_20100126['date']=date
         return shfe_20100126
     elif date == '20101029':
         shfe_20101029['date'] = date
         return shfe_20101029
+    elif date in ['20100416','20130821']:
+        return None
     else:
         varList = ['天然橡胶', '沥青仓库', '沥青厂库', '热轧卷板', '燃料油', '白银', '线材', '螺纹钢', '铅', '铜', '铝', '锌', '黄金', '锡', '镍']
         url = cons.SHFE_RECIEPT_URL_1 % date
-        try:
-            data = pd.read_html(url)[0]
-        except:
-            return pd.DataFrame()
+
+        data = pandas_readHtml_link(url)[0]
+
         indexs = [x for x in data.index if (data[0].tolist()[x] in varList)]
         lastIndex = [x for x in data.index if '注' in str(data[0].tolist()[x])][0]-1
         records = pd.DataFrame()
@@ -97,7 +105,7 @@ def get_shfe_reciept_1(date = None,vars = cons.vars):
                 dataCut = dataCut.fillna(method='pad')
             D={}
             D['var'] = chinese_to_english(dataCut[0].tolist()[0])
-            D['reciept'] = dataCut[1].tolist()[-1]
+            D['reciept'] = int(dataCut[1].tolist()[-1])
             D['date'] = date
             records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
@@ -126,8 +134,11 @@ def get_shfe_reciept_2(date = None,vars=None):
                     date            日期                         string YYYYMMDD
     """
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
+    if date not in calendar:
+        print('%s非交易日' %date)
+        return None
     url = cons.SHFE_RECIEPT_URL_2 % date
-    r = requests.get(url)
+    r = requests_link(url,encoding='utf-8')
     r.encoding = 'utf-8'
     try:
         context = json.loads(r.text)
@@ -139,7 +150,7 @@ def get_shfe_reciept_2(date = None,vars=None):
     records = pd.DataFrame()
     for var in set(data['VARNAME'].tolist()):
         dataCut = data[data['VARNAME'] == var]
-        D = {'var':chinese_to_english(re.sub("\W|[a-zA-Z]", "", var)),'reciept':dataCut['WRTWGHTS'].tolist()[-1],'date':date}
+        D = {'var':chinese_to_english(re.sub("\W|[a-zA-Z]", "", var)),'reciept':int(dataCut['WRTWGHTS'].tolist()[-1]),'date':date}
         records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -165,9 +176,12 @@ def get_czce_reciept_1(date = None, vars=cons.vars):
                     date            日期                         string YYYYMMDD
     """
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
+    if date not in calendar:
+        print('%s非交易日' %date)
+        return None
     url = cons.CZCE_RECIEPT_URL_1 % date
-    r = requests.get(url)
-    r.encoding = 'gbk'
+    r = requests_link(url,encoding='utf-8')
+    r.encoding = 'utf-8'
     context = r.text
     data = pd.read_html(context)[1]
     records=pd.DataFrame()
@@ -187,7 +201,7 @@ def get_czce_reciept_1(date = None, vars=cons.vars):
             reciept = dataCut[6].tolist()[-1]
         else:
             reciept =dataCut[5].tolist()[-1]
-        D = {'var':var, 'reciept':reciept, 'date':date}
+        D = {'var':var, 'reciept':int(reciept), 'date':date}
         records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -212,9 +226,12 @@ def get_czce_reciept_2(date = None,vars = cons.vars):
                     date            日期                         string YYYYMMDD
     """
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
+    if date not in calendar:
+        print('%s非交易日' %date)
+        return None
     url = cons.CZCE_RECIEPT_URL_2 % (date[:4], date)
     r = requests.get(url)
-    r.encoding = 'gbk'
+    r.encoding = 'utf-8'
     data = pd.read_html(r.text)[3:]
     records=pd.DataFrame()
     for dataCut in data:
@@ -229,8 +246,9 @@ def get_czce_reciept_2(date = None,vars = cons.vars):
                 strings = dataCut[0].tolist()[0]
                 string = strings.split(' ')[0][3:]
                 var = chinese_to_english(re.sub('[A-Z]+', '', string))
-            reciept = dataCut.iloc[:,-3].tolist()[-1]
-            D = {'var':var, 'reciept':reciept, 'date':date}
+            dataCut.columns = dataCut.T[1].tolist()
+            reciept = dataCut['仓单数量'].tolist()[-1]
+            D = {'var':var, 'reciept':int(reciept), 'date':date}
             records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -249,20 +267,26 @@ def get_czce_reciept_3(date = None, vars = cons.vars):
         Return
         -------
             DataFrame:
-                展期收益率数据(DataFrame):
+                展期收益率数据(DataFrame):`1
                     var             商品品种                     string
                     reciept         仓单数                       int
                     date            日期                         string YYYYMMDD
     """
+
     date = cons.convert_date(date).strftime('%Y%m%d') if date is not None else datetime.date.today()
+    if date not in calendar:
+        print('%s非交易日' %date)
+        return None
     url = cons.CZCE_RECIEPT_URL_3 % (date[:4], date)
-    r = requests.get(url)
-    r.encoding = 'gbk'
+    r = requests_link(url,encoding='utf-8')
+    r.encoding = 'utf-8'
     data = pd.read_html(r.text, encoding='gb2312')
     records=pd.DataFrame()
     if len(data) < 4:
         return records
-    for dataCut in data[1:]:
+    if int(date) <= 20171227:
+        data = data[1:]
+    for dataCut in data:
         if len(dataCut.columns) > 3:
             lastIndexs = [x for x in dataCut.index if '注：' in str(dataCut[0].tolist()[x])]
             if len(lastIndexs) > 0:
@@ -280,7 +304,7 @@ def get_czce_reciept_3(date = None, vars = cons.vars):
                 reciept = dataCut.loc[:, '仓单数量'].tolist()[-1]
             except:
                 reciept = dataCut.loc[:, '仓单数量(保税)'].tolist()[-1]
-            D = {'var': var, 'reciept': reciept, 'date': date}
+            D = {'var': var, 'reciept': int(reciept), 'date': date}
             records = records.append(pd.DataFrame(D, index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -306,36 +330,39 @@ def get_reciept(start=None, end=None, vars=cons.vars):
                     date            日期                        string YYYYMMDD
     """
     start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
     records=pd.DataFrame()
     while start <= end:
-        print(start)
-        for market,marketVars in cons.market_var.items():
+        if start.strftime('%Y%m%d') not in calendar:
+            print('%s非交易日' % start.strftime('%Y%m%d'))
+        else:
+            print(start)
+            for market,marketVars in cons.market_var.items():
 
-            if market == 'dce':
-                f = get_dce_reciept
-            elif market == 'shfe':
-                if start <= datetime.date(2014,5,16):
-                    f = get_shfe_reciept_1
-                else:
-                    f = get_shfe_reciept_2
-            elif market == 'czce':
-                if start <= datetime.date(2010,8,24):
-                    f = get_czce_reciept_1
-                elif start <= datetime.date(2015,11,11):
-                    f = get_czce_reciept_2
-                else:
-                    f = get_czce_reciept_3
+                if market == 'dce':
+                    f = get_dce_reciept
+                elif market == 'shfe':
+                    if start <= datetime.date(2014,5,16):
+                        f = get_shfe_reciept_1
+                    else:
+                        f = get_shfe_reciept_2
+                elif market == 'czce':
+                    if start <= datetime.date(2010,8,24):
+                        f = get_czce_reciept_1
+                    elif start <= datetime.date(2015,11,11):
+                        f = get_czce_reciept_2
+                    else:
+                        f = get_czce_reciept_3
 
 
-            get_vars = [var for var in vars if var in marketVars]
+                get_vars = [var for var in vars if var in marketVars]
 
-            if market != 'cffex' and get_vars != []:
-                records = records.append(f(start,get_vars))
+                if market != 'cffex' and get_vars != []:
+                    records = records.append(f(start,get_vars))
 
         start += datetime.timedelta(days=1)
     return records.reset_index(drop=True)
 
 if __name__ == '__main__':
-    df = get_reciept(start='20180711', end=None)
-    print(df)
+    d = get_czce_reciept_2(date='20141218')
+    print(d)

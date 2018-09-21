@@ -21,6 +21,7 @@ import datetime
 from fushare import cons
 from fushare.symbolVar import *
 from fushare.requests_fun import requests_link
+calendar = cons.get_calendar()
 
 rank_columns = ['vol_party_name', 'vol', 'vol_chg','long_party_name', 'long_openIntr',
    'long_openIntr_chg', 'short_party_name', 'short_openIntr', 'short_openIntr_chg']
@@ -56,11 +57,14 @@ def get_rank_sum_daily(start=None, end=None, vars=cons.vars):
                     date                        日期                         string YYYYMMDD
     """
     start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
     records = pd.DataFrame()
     while start <= end:
         print(start)
-        records = records.append(get_rank_sum(start, vars))
+        if start.strftime('%Y%m%d') in calendar:
+            records = records.append(get_rank_sum(start, vars))
+        else:
+            print('%s非交易日' % start.strftime('%Y%m%d'))
         start += datetime.timedelta(days=1)
 
     return records.reset_index(drop=True)
@@ -96,6 +100,8 @@ def get_rank_sum(date = None,vars=cons.vars):
                     date                        日期                         string YYYYMMDD
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        return None
     dce_var = [i for i in vars if i in cons.market_var['dce']]
     shfe_var = [i for i in vars if i in cons.market_var['shfe']]
     czce_var = [i for i in vars if i in cons.market_var['czce']]
@@ -191,6 +197,9 @@ def get_shfe_rank_table(date = None,vars = cons.vars):
                 date                        日期                        string YYYYMMDD
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' % date.strftime('%Y%m%d'))
+        return {}
     url = cons.SHFE_VOLRANK_URL %(date.strftime('%Y%m%d'))
     r = requests_link(url,'utf-8')
     try:
@@ -229,7 +238,7 @@ def get_shfe_rank_table(date = None,vars = cons.vars):
 
 
 
-def _czce_df_read(url,skiprow):
+def _czce_df_read(url,skiprow,encode='utf-8'):
     """
         抓取郑州商品期货交易所的网页数据
         Parameters
@@ -241,7 +250,7 @@ def _czce_df_read(url,skiprow):
             DataFrame
                 
     """
-    r = requests_link(url,'gbk')
+    r = requests_link(url,encode)
     data = pd.read_html(r.text, match='.+', flavor=None, header=0, index_col=0, skiprows=skiprow, attrs=None,
                         parse_dates=False, tupleize_cols=False, thousands=', ', encoding="gbk", decimal='.',
                         converters=None, na_values=None, keep_default_na=True)
@@ -274,11 +283,14 @@ def get_czce_rank_table(date = None,vars = cons.vars):
                 date                        日期                        string YYYYMMDD
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' % date.strftime('%Y%m%d'))
+        return {}
     if date <= datetime.date(2010, 8, 25):
         url = cons.CZCE_VOLRANK_URL_1 % (date.strftime('%Y%m%d'))
         data = _czce_df_read(url,skiprow=0)
-        r = requests.get(url)
-        r.encoding = 'gbk'
+        r = requests_link(url,'utf-8')
+        r.encoding = 'utf-8'
         soup = BeautifulSoup(r.text, 'lxml', from_encoding="gb2312")
         symbols=[]
         for link in soup.find_all('b'):
@@ -306,12 +318,16 @@ def get_czce_rank_table(date = None,vars = cons.vars):
     elif date <= datetime.date(2015, 11, 11):
         url = cons.CZCE_VOLRANK_URL_2 % (date.year, date.strftime('%Y%m%d'))
         data = _czce_df_read(url,skiprow=1)[1]
-    else:
+    elif date < datetime.date(2017, 12, 28):
         url = cons.CZCE_VOLRANK_URL_3 % (date.year, date.strftime('%Y%m%d'))
         data = _czce_df_read(url,skiprow=1)[0]
+    else:
+        url = cons.CZCE_VOLRANK_URL_3 % (date.year, date.strftime('%Y%m%d'))
+        data = _czce_df_read(url, skiprow=0)[0]
 
     if len(data.columns) <6:
         return {}
+
     table = data.iloc[:, :9]
     table.columns = rank_columns
     table.loc[:,'rank'] = table.index
@@ -321,6 +337,7 @@ def get_czce_rank_table(date = None,vars = cons.vars):
     indexs = [i for i in table.index if '合约' in i or '品种' in i]
     indexs.insert(0,0)
     D = {}
+
     for i in range(len(indexs)):
         if indexs[i] == 0:
             tableCut = table.loc[:indexs[i + 1], :]
@@ -377,6 +394,9 @@ def get_dce_rank_table(date = None,vars = cons.vars):
     """
 	
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' % date.strftime('%Y%m%d'))
+        return {}
     vars = [i for i in vars if i in cons.market_var['dce']]
     D={}
     for var in vars:
@@ -443,6 +463,9 @@ def get_cffex_rank_table(date = None,vars = cons.vars):
     """
     vars = [i for i in vars if i in cons.market_var['cffex']]
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' % date.strftime('%Y%m%d'))
+        return {}
     D={}
     for var in vars:
         url = cons.CFFEX_VOLRANK_URL % (date.strftime('%Y%m'), date.strftime('%d'), var)
@@ -472,5 +495,5 @@ def _tableCut_cal(tableCut, symbol):
 
 
 if __name__ == '__main__':
-    df = get_czce_rank_table('20180706')
+    df = get_rank_sum_daily(start='20180905')
     print(df)

@@ -17,6 +17,7 @@ import datetime
 import time
 from fushare import cons
 from fushare.symbolVar import *
+calendar = cons.get_calendar()
 
 def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
     """
@@ -44,7 +45,7 @@ def get_spotPrice_daily(start = None, end = None, vars = cons.vars):
     """
 
     start = cons.convert_date(start) if start is not None else datetime.date.today()
-    end = cons.convert_date(end) if end is not None else datetime.date.today()
+    end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
     df_list=[]
     while start <= end:
         print(start)
@@ -80,18 +81,23 @@ def get_spotPrice(date = None,vars = cons.vars):
                 domBasisRate    主力合约相对现货的基差率       float
                 date            日期                       string YYYYMMDD
     """
-
+	
     date = cons.convert_date(date) if date is not None else datetime.date.today()
+    if date.strftime('%Y%m%d') not in calendar:
+        print('%s非交易日' %date.strftime('%Y%m%d'))
+        return None
     u1 = cons.SYS_SPOTPRICE_LATEST_URL
     u2 = cons.SYS_SPOTPRICE_URL %date.strftime('%Y-%m-%d')
     i = 1
     while True:
         for url in [u2,u1]:
             try:
+
                 r=requests.get(url,timeout=2)
                 string = pd.read_html(r.text)[0].loc[1,1]
                 news = ''.join(re.findall(r'[0-9]',string))
                 if news[3:11] == date.strftime('%Y%m%d'):
+
                     records = _check_information(pd.read_html(r.text)[1],date)
                     records.index = records['var']
                     vars_inMarket = [i for i in vars if i in records.index]
@@ -107,12 +113,18 @@ def get_spotPrice(date = None,vars = cons.vars):
 
 
 def _check_information(df, date):
+
     df = df.loc[:, [0, 1, 2, 3, 7, 8]]
     df.columns = ['var', 'SP', 'nearSymbol', 'nearPrice', 'domSymbol', 'domPrice']
     records=pd.DataFrame()
     for string in df['var'].tolist():
-        news = ''.join(re.findall(r'[\u4e00-\u9fa5]', string))
+
+        if string == 'PTA':
+            news = 'PTA'
+        else:
+            news = ''.join(re.findall(r'[\u4e00-\u9fa5]', string))
         if news != '' and news not in ['商品', '价格', '上海期货交易所', '郑州商品交易所', '大连商品交易所']:
+
             var = chinese_to_english(news)
             record = df[df['var'] == string]
             record.loc[:,'var'] = var
@@ -125,10 +137,11 @@ def _check_information(df, date):
             records = records.append(record)
 
 
-    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype('float')
+    records.loc[:, ['nearPrice', 'domPrice', 'SP']] = records.loc[:, ['nearPrice', 'domPrice', 'SP']].astype(
+        'float')
 
-    records.loc[:,'nearSymbol'] = records['nearSymbol'].replace('[^0-9]*(\d*)$', '\g<1>',regex=True)
-    records.loc[:,'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$', '\g<1>',regex=True)
+    records.loc[:, 'nearSymbol'] = records['nearSymbol'].replace('[^0-9]*(\d*)$', '\g<1>', regex=True)
+    records.loc[:, 'domSymbol'] = records['domSymbol'].replace('[^0-9]*(\d*)$', '\g<1>', regex=True)
 
     records.loc[:, 'nearSymbol'] = records['var'] + records.loc[:, 'nearSymbol'].astype('int').astype('str')
     records.loc[:, 'domSymbol'] = records['var'] + records.loc[:, 'domSymbol'].astype('int').astype('str')
@@ -149,5 +162,5 @@ def _check_information(df, date):
 
 
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20180705', end ='20180714',vars = ['RB'])
+    df = get_spotPrice_daily(start ='20120104', end ='20120104')
     print(df)
