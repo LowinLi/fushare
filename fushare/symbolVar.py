@@ -3,6 +3,7 @@
 import re
 from fushare import cons
 
+
 def symbol2varietie(symbol):
     var = ''.join(re.findall('\D',symbol)).upper().strip()
     if var == 'PTA':
