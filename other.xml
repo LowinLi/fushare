@@ -1,0 +1,16 @@
+<application>
+  <component name="PyTestFrameworkService">
+    <option name="SDK_TO_PYTEST">
+      <map>
+        <entry key="C:\Anaconda2\envs\py3\python.exe" value="true" />
+        <entry key="C:\Anaconda2\python.exe" value="true" />
+      </map>
+    </option>
+    <option name="SDK_TO_NOSETEST">
+      <map>
+        <entry key="C:\Anaconda2\envs\py3\python.exe" value="true" />
+        <entry key="C:\Anaconda2\python.exe" value="true" />
+      </map>
+    </option>
+  </component>
+</application>
