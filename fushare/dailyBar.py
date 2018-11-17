@@ -88,7 +88,10 @@ def get_cffex_daily(date=None):
             elif field in ['volume', 'open_interest', 'oi_chg']:
                 row_dict[field] = int(row[i + 1])
             else:
-                row_dict[field] = float(row[i + 1])
+                try:
+                    row_dict[field] = float(row[i + 1])
+                except:
+                    pass
         row_dict['pre_settle'] = row_dict['close'] - row_dict['change1']
         dict_data.append(row_dict)
 
@@ -517,5 +520,5 @@ def get_future_daily(start=None, end=None, market='CFFEX'):
         return pd.concat(df_list)
 
 if __name__ == '__main__':
-    d = get_future_daily('20180906')
+    d = get_cffex_daily('20180119')
     print(d)
