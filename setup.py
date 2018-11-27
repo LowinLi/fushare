@@ -21,7 +21,7 @@ Upgrade
 
 setup(
     name='fushare',
-    version='1.1.16',
+    version='1.1.17',
 	install_requires = 
 		['pandas>=0.23.1',
 		'requests>=2.12.4',

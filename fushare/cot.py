@@ -145,7 +145,7 @@ def get_rank_sum(date = None,vars=cons.vars):
                 tableCut_top15 = tableCut[tableCut['rank'] <= 15]
                 tableCut_top20 = tableCut[tableCut['rank'] <= 20]
 
-                D = {'symbol': symbol, 'var': var,
+                D = {'symbol': symbol, 'variety': var,
 
                      'vol_top5': tableCut_top5['vol'].sum(), 'vol_chg_top5': tableCut_top5['vol_chg'].sum(),
                      'long_openIntr_top5': tableCut_top5['long_openIntr'].sum(),
@@ -176,12 +176,12 @@ def get_rank_sum(date = None,vars=cons.vars):
                 records = records.append(pd.DataFrame(D, index=[0]))
 
     if len(D.items())>0:
-        add_vars = [i for i in cons.market_var['shfe']+cons.market_var['cffex'] if i in records['var'].tolist()]
+        add_vars = [i for i in cons.market_var['shfe']+cons.market_var['cffex'] if i in records['variety'].tolist()]
         for var in add_vars:
-            recordsCut = records[records['var'] == var]
+            recordsCut = records[records['variety'] == var]
             var_record = pd.DataFrame(recordsCut.sum()).T
             var_record['date'] = date.strftime('%Y%m%d')
-            var_record.loc[:,['var','symbol']] = var
+            var_record.loc[:,['variety','symbol']] = var
             records = records.append(var_record)
 
     return records.reset_index(drop=True)
@@ -238,7 +238,7 @@ def get_shfe_rank_table(date = None,vars = cons.vars):
         return {}
     df = df.applymap(lambda x: x.strip() if type(x) == type('') else x)
     df = df.applymap(lambda x: None if x == '' else x)
-    df['var'] = df['symbol'].apply(lambda x: symbol2varietie(x))
+    df['variety'] = df['symbol'].apply(lambda x: symbol2varietie(x))
 
     df = df[df['rank'] > 0]
     for col in ['PARTICIPANTID1','PARTICIPANTID2','PARTICIPANTID3','product1','product2']:
@@ -246,10 +246,10 @@ def get_shfe_rank_table(date = None,vars = cons.vars):
             del df[col]
         except:
             pass
-    get_vars = [var for var in vars if var in df['var'].tolist()]
+    get_vars = [var for var in vars if var in df['variety'].tolist()]
     D={}
     for var in get_vars:
-        df_var = df[df['var'] == var]
+        df_var = df[df['variety'] == var]
         for symbol in set(df_var['symbol']):
             df_symbol = df_var[df_var['symbol'] == symbol]
             D[symbol] = df_symbol.reset_index(drop=True)
@@ -333,7 +333,7 @@ def get_czce_rank_table(date = None,vars = cons.vars):
             tableCut.loc['合计','rank'] = 999
             tableCut.loc['合计',['vol_party_name','long_party_name','short_party_name']] = None
             tableCut.loc[:,'symbol'] = symbol
-            tableCut.loc[:,'var'] = symbol2varietie(symbol)
+            tableCut.loc[:,'variety'] = symbol2varietie(symbol)
             tableCut[intColumns] = tableCut[intColumns].fillna(0)
             tableCut[intColumns] = tableCut[intColumns].astype(str)
             tableCut[intColumns] = tableCut[intColumns].applymap(lambda x: x.replace(',', ''))
@@ -536,11 +536,19 @@ def _tableCut_cal(tableCut, symbol):
         tableCut_sum[col] = None
     tableCut = tableCut.append(pd.DataFrame(tableCut_sum).T,sort = True)
     tableCut['symbol'] = symbol
-    tableCut['var'] = var
+    tableCut['variety'] = var
 
     return tableCut
 
 
 if __name__ == '__main__':
-    df = get_czce_rank_table(date = '20181105')
+    df = get_rank_sum('20181105')
+    print(df)
+    #df = get_czce_rank_table(date = '20181105')
+    #print(df)
+    #df = get_dce_rank_table(date = '20181105')
+    #print(df)
+    df = get_shfe_rank_table(date = '20181105')
+    print(df)
+    df = get_cffex_rank_table(date = '20181105')
     print(df)

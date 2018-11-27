@@ -265,7 +265,7 @@ def get_shfe_vwap(date=None):
         json_data = json.loads(urlopen(Request(cons.SHFE_VWAP_URL % (day.strftime('%Y%m%d')),
                                                headers=cons.headers)).read().decode('utf8'))
     except HTTPError as reason:
-        if reason.code != 404:
+        if reason.code not in [404,403]:
             print(cons.SHFE_DAILY_URL % (day.strftime('%Y%m%d')), reason)
         return None
 
@@ -520,5 +520,5 @@ def get_future_daily(start=None, end=None, market='CFFEX'):
         return pd.concat(df_list)
 
 if __name__ == '__main__':
-    d = get_cffex_daily('20180119')
+    d = get_shfe_daily('20181126')
     print(d)
