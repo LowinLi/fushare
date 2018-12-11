@@ -152,5 +152,5 @@ def _monthChange(symbol1,symbol2):
 
 if __name__ == '__main__':
 
-    d = get_rollYield_bar(type='date', var = 'RB', start = '20180906')
+    d = get_rollYield_bar(type='var', date = '20181128')
     print(d)

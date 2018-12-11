@@ -161,5 +161,6 @@ def _check_information(df, date):
 
 
 if __name__ == '__main__':
-    df = get_spotPrice_daily(start ='20181101', end ='20181110')
+    df = get_spotPrice_daily(start ='20181108', end ='20181110')
+    print(df)
 
