@@ -8,7 +8,7 @@ Created on 2018年07月11日
 获取各合约展期收益率，日线数据从dailyBar脚本获取
 """
 
-
+import numpy as np
 import matplotlib.pyplot as plt
 from fushare.symbolVar import *
 from fushare.dailyBar import *
@@ -65,26 +65,29 @@ def get_rollYield_bar(type = 'symbol',  var = 'RB',date= None, start = None, end
         for market in ['dce','cffex','shfe','czce']:
             df = df.append(get_future_daily(start=date, end=date, market=market))
         varList = list(set(df['variety']))
-        ryList = []
+        dfL=pd.DataFrame()
         for var in varList:
-            ryList.append(get_rollYield(date, var, df=df))
-        df = pd.DataFrame(ryList,index = varList,columns = ['ry'])
-        df = df.sort_values('ry')
+            ry = get_rollYield(start, var, df = df)
+            if ry:
+                dfL = dfL.append(pd.DataFrame([ry], index=[var], columns=['rollYield','nearBy','deferred']))
+        dfL['date'] = start
+        dfL = dfL.sort_values('rollYield')
         if plot:
-            _plot_bar(df['ry'].tolist(), df.index)
-        return df
+            _plot_bar(dfL['rollYield'].tolist(), dfL.index)
+        return dfL
 
     if type == 'date':
         dfL=pd.DataFrame()
         while start <= end:
             try:
                 ry = get_rollYield(start, var)
-                dfL = dfL.append(pd.DataFrame([ry], index=[start], columns=['ry']))
+                if ry:
+                    dfL = dfL.append(pd.DataFrame([ry], index=[start], columns=['rollYield','nearBy','deferred']))
             except:
                 pass
             start += datetime.timedelta(days=1)
         if plot:
-            _plot(pd.to_datetime(dfL.index), dfL['ry'].tolist())
+            _plot(pd.to_datetime(dfL.index), dfL['rollYield'].tolist())
         return dfL
 
 
@@ -101,10 +104,10 @@ def get_rollYield(date = None, var = 'IF',symbol1 = None, symbol2 = None, df = N
             df: DataFrame或None 从dailyBar得到合约价格，如果为空就在函数内部抓dailyBar，直接喂给数据可以让计算加快
         Return
         -------
-            DataFrame
-                展期收益率数据(DataFrame):
-                    ry      展期收益率
-                    index   日期或品种
+            tuple
+            rollYield
+            nearBy
+            deferred
     """
     date = cons.convert_date(date) if date is not None else datetime.date.today()
     if date.strftime('%Y%m%d') not in calendar:
@@ -118,28 +121,11 @@ def get_rollYield(date = None, var = 'IF',symbol1 = None, symbol2 = None, df = N
     if var:
         df = df[df['variety'] == var].sort_values('open_interest',ascending=False)
         df['close']=df['close'].astype('float')
-        priceRate = df['close'].pct_change().tolist()[1]
         symbol1 = df['symbol'].tolist()[0]
         symbol2 = df['symbol'].tolist()[1]
-    else:
-        close1 = df['close'][df['symbol'] == symbol1.upper()].tolist()[0]
-        close2 = df['close'][df['symbol'] == symbol2.upper()].tolist()[0]
-        priceRate = close2/close1-1
-    mc = _monthChange(symbol2, symbol1)
-    ry = priceRate/mc
-    return ry
 
-def _monthChange(symbol1,symbol2):
-    """
-            获取两个合约的交割月的月间差
-        Parameters
-        ------          
-            symbol1: string 合约1如rb1810
-            symbol2: string 合约2如rb1812
-        Return
-        -------
-            c： int 月间差
-    """
+    close1 = df['close'][df['symbol'] == symbol1.upper()].tolist()[0]
+    close2 = df['close'][df['symbol'] == symbol2.upper()].tolist()[0]
 
     A = re.sub(r'\D', '', symbol1)
     A1 = int(A[:-2])
@@ -148,9 +134,17 @@ def _monthChange(symbol1,symbol2):
     B1 = int(B[:-2])
     B2 = int(B[-2:])
     c = (A1 - B1) * 12 + (A2 - B2)
-    return c
+    if close1 == 0 or close2 == 0:
+        return False
+
+    if c > 0:
+        return np.log(close2/close1)/c*12, symbol2,symbol1
+    else:
+        return np.log(close2/close1)/c*12, symbol1,symbol2
+
+
 
 if __name__ == '__main__':
 
-    d = get_rollYield_bar(type='var', date = '20181128')
+    d = get_rollYield_bar(type = 'var', date = '20181214',plot = True)
     print(d)
