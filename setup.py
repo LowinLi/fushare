@@ -26,6 +26,7 @@ setup(
 		['pandas>=0.23.1',
 		'requests>=2.12.4',
 		'matplotlib>=2.0.0',
+		'lxml'
 		'bs4'],
     description='A utility for fundamentals data of China commodity futures',
 	packages = ['fushare'],
