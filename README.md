@@ -14,7 +14,8 @@
     
 最新版本
 ---------------
-    1.1.22
+    1.2.1
+    新增了每交易日17点自动爬数据并存本地csv文件功能，进而将数据发送给自己QQ邮件（微信有提醒）
 
 
 **作者：LowinLi**
@@ -25,6 +26,11 @@
 - [注册仓单](#注册仓单)
 - [现货价格和基差](#现货价格和基差)
 - [会员持仓排名](#会员持仓排名)
+- [anaconda环境配置](#anaconda环境配置)
+- [每日监控下载配置](#每日监控下载配置)
+- [QQ邮箱SMTP服务设置](#QQ邮箱SMTP服务设置)
+
+
 
 
 
@@ -132,6 +138,72 @@ f.get_dce_rank_table()、f.get_cffex_rank_table()、f.get_czce_rank_table()、f.
 注意：
 
 因为每个交易所公布的持仓排名不同：大连所只公布品种的总持仓排名，没有按不同交割月划分；上海、中金交易所公布了每个交割月的持仓排名，没有公布品种所有合约总排名，因此这里的品种排名和是各合约加总计算得来；郑州交易所公布了各合约排名和品种排名，因此这里都是交易所原始数据。
+
+
+## anaconda环境配置
+anaconda是集成了上千个常用包的python发行版本，通过安装anaconda简化了环境管理工作，非常推荐使用。
+
+[anaconda下载链接](https://repo.anaconda.com/archive/)
+
+建议选择成熟的python3.6版本，即anaconda3-5.2.0。根据系统选择windows版、linux版或mac版，及32位或64位。红框为64位windows选择的版本
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/bGJd4p3Vc6xvQjC2GL8tkzuH*PPtvppmtQ1LCIO4lqM!/b/dMAAAAAAAAAA&bo=vQMBBQAAAAADB5g!&rf=viewer_4)
+
+双击安装过程中有一个界面需要注意，即下图把两个钩都选上，以便于把安装的环境加入系统路径。
+
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/trxwrKu7FsArWoYY.3n9erIExJdt3BlOhZJ1q1720XY!/b/dLYAAAAAAAAA&bo=8AGBAQAAAAADF0M!&rf=viewer_4)
+
+安装好后，打开cmd窗口，输入python，如果如下图所示，即已经在系统目录中安装好anaconda5.2.0(python3.6)的环境。
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/khK1RedWmG.k4hI6XwnI*CmYGXfvHuIlu2QlDHmEtYA!/b/dL8AAAAAAAAA&bo=9gIBAgAAAAADB9U!&rf=viewer_4)
+
+用ctrl+Z可以退出刚才的python运行环境回到cmd命令下，输入
+```
+pip install fushare
+```
+即在python环境中安装了fushare库(有网络情况下)
+
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/cLA3Un4yK4rE3JHXHdHhO5mDxKokQ158J734BBmz69Q!/b/dL8AAAAAAAAA&bo=.AKpBAAAAAADF2U!&rf=viewer_4)
+
+再次输入python，进入python环境，输入
+```
+import fushare
+```
+即导入了fushare库，再输入
+```
+fushare.__version__
+```
+可以查看当前安装的fushare版本号
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/7fePfBNlfdeBiuiSFd*Ba2X2jBrjXb4wjS9jPyH*7Nc!/b/dL8AAAAAAAAA&bo=.AKfAQAAAAADB0Y!&rf=viewer_4)
+
+
+## 每日监控下载配置
+本地配置好anaconda，以及通过pip安装好fushare>=1.2.1后，在github上下载示例文件，即按照下图选择。
+
+[https://github.com/LowinLi/fushare](https://github.com/LowinLi/fushare)
+
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/oT9PEhN0Knbv7Q.hPIO9TyuDkHl*il8K92GILqm4QHQ!/b/dL4AAAAAAAAA&bo=EgTRAwAAAAADB.Y!&rf=viewer_4)
+
+解压下载的文件，然后来到example目录下，设置setting配置文件
+root设置为fushare爬数据时存储的默认目录（需要保证目录存在），qqEmail和secret为爬取到数据时把数据发送给自己的qq邮箱账号和密码。需要开通SMTP服务，如果不需要自己邮件提醒，就不用设置（也不要改默认的qqEmail和secret）。
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/Ja.CVdg.fgrxFKW2jBGJqT53b7qCNSY*DwmbGDBS928!/b/dL8AAAAAAAAA&bo=aQRbAwAAAAADBxc!&rf=viewer_4)
+
+最后双击monitor.cmd即完成，每日17点自动下载数据。
+
+## QQ邮箱SMTP服务设置
+在利用python程序发送QQ邮件时，需要开启QQ邮件的SMTP服务，操作方法如下，第一步打开QQ邮箱，点‘设置’。
+
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/bvaIA.HUOZL.pKsEPMB4gj8dvT*9TLy*6x7zIKwzPQE!/b/dLwAAAAAAAAA&bo=HgR5AgAAAAADB0M!&rf=viewer_4)
+
+找到‘账户’，并下拉
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/umgOdgp4tRuhiDOmtbLXiVVIPZ*87HeSQBaVHd1jPcY!/b/dL8AAAAAAAAA&bo=HATrAAAAAAADF8E!&rf=viewer_4)
+
+开启以下的两项服务，并生成授权码，授权码为python程序通过SMTP发送邮件的密码，即上一节文档的secret（不同于QQ邮箱登录密码）
+![image](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/XavUKCeQ3fSqFXFTPBU0kJN9eIoFMtOApCEp7ZNDRqs!/b/dL8AAAAAAAAA&bo=iAOWAgAAAAADFy0!&rf=viewer_4)
+
+在启动服务的过程中，如果该QQ账户没有绑定过手机号，可能会需要验证，这里不再赘述。
+
+
+
+
 
 致谢：
 感谢tushare项目提供借鉴学习的机会；感谢生意社网站的商品基差数据的公开。
