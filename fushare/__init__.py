@@ -46,13 +46,19 @@ ln(合约2价格/合约1价格)/（合约1交割年月 - 合约2交割年月）*
 1.1.22
 增加2019年的交易日历
 
+1.2.1
+增加脚本sendEmail，方便每日监控17:00爬取数据，以csv文件形式存本地，并发送给自己QQ邮件确认完成。
+需要在配置文件setting.json填写本地存储地址和QQ邮箱账号密码。未开通SMTP服务需要在QQ邮箱开启，方法见github教程
+
+修改展期收益率取var时的日期bug
+，由变量start改为变量date
 """
 
 
 
 
 
-__version__ = '1.1.22'
+__version__ = '1.2.1'
 __author__ = 'LowinLi'
 
 
@@ -95,3 +101,8 @@ from fushare.dailyBar import (get_cffex_daily,
                               get_shfe_daily,
                               get_dce_daily,
                               get_future_daily)
+
+"""
+发邮件模块
+"""
+from fushare.sendEmail import sendEmail
