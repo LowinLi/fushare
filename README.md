@@ -16,6 +16,8 @@
 ---------------
     1.2.1
     新增了每交易日17点自动爬数据并存本地csv文件功能，进而将数据发送给自己QQ邮件（微信有提醒）
+    1.2.3
+    新增指数日线行情爬取（持仓量加权）
 
 
 **作者：LowinLi**
@@ -26,6 +28,7 @@
 - [注册仓单](#注册仓单)
 - [现货价格和基差](#现货价格和基差)
 - [会员持仓排名](#会员持仓排名)
+- [日线行情K线](#日线行情K线)
 - [anaconda环境配置](#anaconda环境配置)
 - [每日监控下载配置](#每日监控下载配置)
 - [QQ邮箱SMTP服务设置](#QQ邮箱SMTP服务设置)
@@ -138,6 +141,16 @@ f.get_dce_rank_table()、f.get_cffex_rank_table()、f.get_czce_rank_table()、f.
 注意：
 
 因为每个交易所公布的持仓排名不同：大连所只公布品种的总持仓排名，没有按不同交割月划分；上海、中金交易所公布了每个交割月的持仓排名，没有公布品种所有合约总排名，因此这里的品种排名和是各合约加总计算得来；郑州交易所公布了各合约排名和品种排名，因此这里都是交易所原始数据。
+
+## 日线行情K线
+通过爬取交易所官网信息，可以获得各合约日线行情，以及根据持仓量加权的指数行情，用法如下：
+```
+f.get_future_daily(start='20190107', end='20190108', market='SHFE', indexBar = True)
+```
+![日线行情](http://m.qpic.cn/psb?/V12c0Jww0zKwzz/0Kaa2Y9yMcyL7puvLxeaDs1oRW7Nlx6pkC5ENFtrQN0!/b/dLgAAAAAAAAA&bo=PATEAAAAAAADB94!&rf=viewer_4)
+
+market可以添为四个交易所的简称，即'dce'代表大商所；'shfe'代表上期所；'czce'代表郑商所；'cffex'代表中金所。
+indexBar为True时，在生成的dataframe中通过持仓量加权合成指数合约，如RB99
 
 
 ## anaconda环境配置
