@@ -477,7 +477,8 @@ def get_future_daily(start=None, end=None, market='CFFEX', indexBar = False):
     ------
         start: 开始日期 format：YYYY-MM-DD 或 YYYYMMDD 或 datetime.date对象 为空时为当天
         end: 结束数据 format：YYYY-MM-DD 或 YYYYMMDD 或 datetime.date对象 为空时为当天
-        market: 'CFFEX' 中金所, 'CZCE' 郑商所,  'SHFE' 上期所, 'DCE' 大商所 之一。默认为中金所 
+        market: 'CFFEX' 中金所, 'CZCE' 郑商所,  'SHFE' 上期所, 'DCE' 大商所 之一。默认为中金所
+        indexBar: bool  是否合成指数K线
     Return
     -------
         DataFrame
@@ -550,15 +551,16 @@ def get_futureIndex(df):
     index_dfs = []
     for var in set(df['variety']):
         dfCut = df[df['variety'] == var]
-        dfCut = dfCut[dfCut['volume'] != 0]
-        index_df = pd.Series(index = dfCut.columns)
-        index_df[['volume','open_interest','turnover']] = dfCut[['volume','open_interest','turnover']].sum()
-        index_df[['open','high','low','close','settle','pre_settle']] = np.dot(np.array(dfCut[['open','high','low','close','settle','pre_settle']]).T, np.array((dfCut['open_interest'])))/np.sum(dfCut['open_interest'])
-        index_df[['date','variety']] = dfCut[['date','variety']].iloc[0,:]
-        index_df['symbol'] = index_df['variety'] + '99'
-        index_dfs.append(index_df)
+        dfCut = dfCut[dfCut['open_interest'] != 0]
+        if len(dfCut.index)>0:
+            index_df = pd.Series(index = dfCut.columns)
+            index_df[['volume','open_interest','turnover']] = dfCut[['volume','open_interest','turnover']].sum()
+            index_df[['open','high','low','close','settle','pre_settle']] = np.dot(np.array(dfCut[['open','high','low','close','settle','pre_settle']]).T, np.array((dfCut['open_interest'])))/np.sum(dfCut['open_interest'])
+            index_df[['date','variety']] = dfCut[['date','variety']].iloc[0,:]
+            index_df['symbol'] = index_df['variety'] + '99'
+            index_dfs.append(index_df)
     return pd.concat(index_dfs,axis = 1).T
 
 if __name__ == '__main__':
-    d = get_future_daily(start='20190106', end='20190107', market='CFFEX', indexBar = True)
+    d = get_future_daily(start='20180301', end='20190107', market='CZCE', indexBar = True)
     print(d)
