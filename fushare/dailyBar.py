@@ -11,9 +11,11 @@ import json
 import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
+import numpy as np
 from fushare import cons
 import requests
 import warnings
+
 
 calendar = cons.get_calendar()
 
@@ -468,9 +470,9 @@ def get_dce_daily(date=None, type="future", retries=0):
         return pd.merge(df, pd.DataFrame(implied_data), on='contract_id', how='left', indicator=False)[output_columns]
 
 
-def get_future_daily(start=None, end=None, market='CFFEX'):
+def get_future_daily(start=None, end=None, market='CFFEX', indexBar = False):
     """
-        获取中金所日交易数据
+        获取交易所日交易数据
     Parameters
     ------
         start: 开始日期 format：YYYY-MM-DD 或 YYYYMMDD 或 datetime.date对象 为空时为当天
@@ -514,11 +516,49 @@ def get_future_daily(start=None, end=None, market='CFFEX'):
         df = f(start)
         if df is not None:
             df_list.append(df)
+            if indexBar:
+                df_list.append(get_futureIndex(df))
         start += datetime.timedelta(days=1)
 
     if len(df_list) > 0:
-        return pd.concat(df_list)
+        return pd.concat(df_list).reset_index(drop = True)
+
+def get_futureIndex(df):
+    """
+        获取指数日交易数据
+    Parameters
+    ------
+        df: 爬到的原始合约日线行情    dataframe
+    Return
+    -------
+        df: 持仓量加权指数日线行情
+        DataFrame
+            中金所日交易数据(DataFrame):
+                symbol      合约代码
+                date       日期
+                open       开盘价
+                high       最高价
+                low       最低价
+                close      收盘价
+                volume      成交量
+                open_interest 持仓量
+                turnover    成交额
+                settle     结算价
+                pre_settle   前结算价
+                variety     合约类别
+    """
+    index_dfs = []
+    for var in set(df['variety']):
+        dfCut = df[df['variety'] == var]
+        dfCut = dfCut[dfCut['volume'] != 0]
+        index_df = pd.Series(index = dfCut.columns)
+        index_df[['volume','open_interest','turnover']] = dfCut[['volume','open_interest','turnover']].sum()
+        index_df[['open','high','low','close','settle','pre_settle']] = np.dot(np.array(dfCut[['open','high','low','close','settle','pre_settle']]).T, np.array((dfCut['open_interest'])))/np.sum(dfCut['open_interest'])
+        index_df[['date','variety']] = dfCut[['date','variety']].iloc[0,:]
+        index_df['symbol'] = index_df['variety'] + '99'
+        index_dfs.append(index_df)
+    return pd.concat(index_dfs,axis = 1).T
 
 if __name__ == '__main__':
-    d = get_shfe_daily('20181126')
+    d = get_future_daily(start='20190106', end='20190107', market='CFFEX', indexBar = True)
     print(d)
