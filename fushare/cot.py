@@ -537,18 +537,13 @@ def _tableCut_cal(tableCut, symbol):
     tableCut = tableCut.append(pd.DataFrame(tableCut_sum).T,sort = True)
     tableCut['symbol'] = symbol
     tableCut['variety'] = var
-
+    tableCut[intColumns + ['rank']] = tableCut[intColumns + ['rank']].astype(int)
     return tableCut
 
 
 if __name__ == '__main__':
-    df = get_rank_sum('20181105')
-    print(df)
-    #df = get_czce_rank_table(date = '20181105')
-    #print(df)
-    #df = get_dce_rank_table(date = '20181105')
-    #print(df)
-    df = get_shfe_rank_table(date = '20181105')
-    print(df)
-    df = get_cffex_rank_table(date = '20181105')
-    print(df)
+    import fushare as f
+
+    dfs = f.get_czce_rank_table('20190124')
+    for k, v in dfs.items():
+        print(type(v['long_openIntr'].tolist()[-1]))

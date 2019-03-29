@@ -51,6 +51,7 @@ def get_rollYield_bar(type = 'symbol',  var = 'RB',date= None, start = None, end
     date = cons.convert_date(date) if date is not None else datetime.date.today()
     start = cons.convert_date(start) if start is not None else datetime.date.today()
     end = cons.convert_date(end) if end is not None else cons.convert_date(cons.get_latestDataDate(datetime.datetime.now()))
+
     if type == 'symbol':
         df = get_future_daily(start=date, end=date, market=symbolMarket(var))
         df = df[df['variety'] == var]

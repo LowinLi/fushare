@@ -3,7 +3,6 @@ requests>=2.12.4
 matplotlib>=2.0.0
 bs4>=4.5.3
 
-lxml
 datetime
 time
 urllib

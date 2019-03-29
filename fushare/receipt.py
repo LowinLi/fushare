@@ -44,10 +44,10 @@ def get_dce_reciept(date = None,vars=cons.vars):
     data = pandas_readHtml_link(url, encoding='utf-8')[0]
     records=pd.DataFrame()
     for x in data.to_dict(orient='records'):
-        if type(x[0]) == type('a'):
-            if x[0][-2:] == '小计':
-                var = x[0][:-2]
-                D = {'var':chinese_to_english(var),'reciept':int(x[3]),'reciept_chg':int(x[4]),'date':date.strftime('%Y%m%d')}
+        if isinstance(x['品种'],str):
+            if x['品种'][-2:] == '小计':
+                var = x['品种'][:-2]
+                D = {'var':chinese_to_english(var),'reciept':int(x['今日仓单量']),'reciept_chg':int(x['增减']),'date':date.strftime('%Y%m%d')}
                 records = records.append(pd.DataFrame(D,index=[0]))
     if len(records.index) != 0:
         records.index = records['var']
@@ -382,5 +382,5 @@ def get_reciept(start=None, end=None, vars=cons.vars):
     return records.reset_index(drop=True)
 
 if __name__ == '__main__':
-    d = get_reciept('20181128')
+    d = get_reciept('20190301','20190310')
     print(d)

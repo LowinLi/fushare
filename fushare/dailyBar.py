@@ -331,6 +331,7 @@ def get_shfe_daily(date=None):
         df = pd.merge(df, vwap_df[vwap_df.time_range == '9:00-15:00'], on=['date', 'symbol'], how='left')
         df['turnover'] = df.vwap * df.VOLUME
     else:
+        df['VOLUME'] = df['VOLUME'].apply(lambda x: 0 if x == '' else x)
         df['turnover'] = df['VOLUME']*df['SETTLEMENTPRICE']
     df.rename(columns=cons.SHFE_COLUMNS, inplace=True)
     return df[cons.OUTPUT_COLUMNS]
@@ -552,6 +553,7 @@ def get_futureIndex(df):
     for var in set(df['variety']):
         dfCut = df[df['variety'] == var]
         dfCut = dfCut[dfCut['open_interest'] != 0]
+        dfCut = dfCut[dfCut['volume'] != 0]
         if len(dfCut.index)>0:
             index_df = pd.Series(index = dfCut.columns)
             index_df[['volume','open_interest','turnover']] = dfCut[['volume','open_interest','turnover']].sum()

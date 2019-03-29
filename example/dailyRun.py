@@ -6,16 +6,15 @@ import datetime
 from time import sleep
 import warnings
 calendar = fushare.cons.get_calendar()
+
 settingFileName = 'setting.json'
 settingfilePath = fushare.cons.getJsonPath(settingFileName, __file__)
 s = json.load(open(settingfilePath,"r"))
 
 def downLoad(date):
-
     date = fushare.cons.convert_date(date) if date is not None else datetime.date.today()
-    if date.strftime('%Y%m%d') not in calendar:
+    if date not in calendar:
         warnings.warn('%s非交易日' % date.strftime('%Y%m%d'))
-
         return
     #----------------------------------------------------------------------
     print('\n' +'-'*80+'\n展期')
@@ -38,7 +37,7 @@ def downLoad(date):
     df.to_csv(s['root']+'仓单%s.csv'%date)
 
     #----------------------------------------------------------------------
-    if s['qqEmail'] != '*@qq.com':
+    if s['qqEmail'] != '*':
         fushare.sendEmail('fushare',s['qqEmail'],s['secret'],s['qqEmail'],'smtp.qq.com', '465',['展期%s.csv'%date,'基差%s.csv'%date,'会员持仓排名%s.csv'%date,'仓单%s.csv'%date],s['root'],True)
 
 def monitor(catchTime = '17:00'):

@@ -116,7 +116,10 @@ def get_spotPrice(date = None,vars = cons.vars):
 
 
 def _check_information(df, date):
-    df = df.loc[:, [0, 1, 2, 3, 7, 8]]
+    if int(pd.__version__[2:4]) <=23:
+        df = df.loc[:, [0, 1, 2, 3, 7, 8]]
+    else:
+        df = df.loc[:, [0, 1, 2, 3, 5, 6]]
     df.columns = ['var', 'SP', 'nearSymbol', 'nearPrice', 'domSymbol', 'domPrice']
     records=pd.DataFrame()
     for string in df['var'].tolist():

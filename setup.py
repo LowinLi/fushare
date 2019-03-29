@@ -21,13 +21,13 @@ Upgrade
 
 setup(
     name='fushare',
-    version='1.1.17',
+    version='1.2.10',
 	install_requires = 
 		['pandas>=0.23.1',
 		'requests>=2.12.4',
-		'matplotlib>=2.0.0',
-		'lxml',
-		'bs4'],
+		'bs4',
+        'matplotlib'
+         ],
     description='A utility for fundamentals data of China commodity futures',
 	packages = ['fushare'],
 	package_data={'': ['*.py','*.json']},

@@ -1,4 +1,12 @@
 # encoding: UTF-8
+'''
+Created on 2019年01月06日
+@author: lowin
+@contact: li783170560@126.com
+
+发送邮件
+'''
+
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
