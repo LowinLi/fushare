@@ -42,6 +42,8 @@ def get_dce_reciept(date = None,vars=cons.vars):
         return None
     url = cons.DCE_RECIEPT_URL % (date.year, date.month - 1, date.day)
     data = pandas_readHtml_link(url, encoding='utf-8')[0]
+    data.columns = data.iloc[0]
+    data = data.drop(data.index[0])
     records=pd.DataFrame()
     for x in data.to_dict(orient='records'):
         if isinstance(x['品种'],str):
