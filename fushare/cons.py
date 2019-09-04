@@ -5,7 +5,7 @@ import os
 
 market_var = {'cffex': ['IF','IC','IH','T','TF','TS'],
 'dce':['C','CS','A','B','M','Y','P','FB','BB','JD','L','V','PP','J','JM','I','EG'],
-'czce':['WH','PM','CF','SR','TA','OI','RI','MA','ME','FG','RS','RM','ZC','JR','LR','SF','SM','WT','TC','GN','RO','ER','SRX','SRY','WSX','WSY','CY','AP'],
+'czce':['WH','PM','CF','SR','TA','OI','RI','MA','ME','FG','RS','RM','ZC','JR','LR','SF','SM','WT','TC','GN','RO','ER','SRX','SRY','WSX','WSY','CY','AP',"UR"],
 'shfe':['CU','AL','ZN','PB','NI','SN','AU','AG','RB','WR','HC','FU','BU','RU','SC','SP']
 }
 
