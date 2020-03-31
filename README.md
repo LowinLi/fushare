@@ -1,4 +1,7 @@
 # fushare(python3)
+
+因为个人原因，本项目不再维护了，感谢各位网友的关注，如果需要获取相关数据，建议关注另一个开源项目[akshare](https://github.com/jindaxiang/akshare)
+
 [主页链接](https://github.com/LowinLi/fushare)
 
 [策略示例链接--聚宽社区](https://www.joinquant.com/post/15594)
